@@ -8,6 +8,8 @@ const nextConfig = {
   output: 'standalone',
   experimental: {
     outputFileTracingRoot: path.join(__dirname, '..'),
+    // ponytail: reflect can exceed 30s; Next default proxy timeout is 30_000ms
+    proxyTimeout: 180_000,
   },
   webpack: (config) => {
     config.resolve.modules = [

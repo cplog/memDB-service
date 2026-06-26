@@ -55,6 +55,7 @@ PORT=3000
 ```
 
 3. The frontend rewrites `/api/*` to `BACKEND_URL` internally.
+4. Health check: `GET /` (200). Start command: `node frontend_platform/server.js` (Dockerfile default).
 
 ## Railway (Hindsight + Postgres — self-hosted)
 

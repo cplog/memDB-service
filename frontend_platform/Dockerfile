@@ -21,9 +21,10 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 
-# Copy built app from the builder stage
-COPY --from=builder /app/frontend_platform/.next/standalone ./frontend_platform/
+# Monorepo standalone layout: server lives at frontend_platform/server.js
+COPY --from=builder /app/frontend_platform/.next/standalone ./
 COPY --from=builder /app/frontend_platform/.next/static ./frontend_platform/.next/static
+COPY --from=builder /app/frontend_platform/public ./frontend_platform/public
 
 EXPOSE 3000
 
