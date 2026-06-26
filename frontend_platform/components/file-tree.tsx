@@ -143,17 +143,23 @@ export function FileTree({
     const docsLoaded = isBank && node.bankId ? docCache[node.bankId] !== undefined : false
     const isLoadingDocs = isBank && node.bankId ? loadingBanks.has(node.bankId) : false
 
+    const showSubtitle =
+      isDocument &&
+      node.documentSubtitle &&
+      node.documentSubtitle !== node.name &&
+      !node.documentSubtitle.startsWith(node.name)
+
     return (
-      <div key={node.id}>
+      <div key={node.id} className="min-w-0 max-w-full">
         <button
           type="button"
           className={cn(
-            'w-full flex items-center gap-2 py-1.5 pr-3 rounded-md text-left min-h-[32px] group transition-colors',
+            'w-full max-w-full min-w-0 flex items-start gap-1.5 py-1 pr-2 rounded-md text-left overflow-hidden group transition-colors',
             isActive
               ? 'text-[hsl(var(--vault-active))] bg-[hsl(var(--accent))]/10'
               : 'text-[hsl(var(--vault-muted))] hover:text-foreground hover:bg-[hsl(var(--secondary))]'
           )}
-          style={{ paddingLeft: `${depth * 16 + 12}px` }}
+          style={{ paddingLeft: `${depth * 12 + 8}px` }}
           onClick={(event) => {
             const toggleTarget = (event.target as HTMLElement).closest('[data-tree-toggle]')
             if (toggleTarget && hasExpandable) {
@@ -193,8 +199,7 @@ export function FileTree({
           <span className="min-w-0 flex-1 overflow-hidden">
             <span
               className={cn(
-                'block text-sm leading-tight',
-                isDocument ? 'line-clamp-2' : 'truncate',
+                'block text-sm leading-snug truncate',
                 isActive && 'font-medium',
                 isBank && !isActive && 'text-foreground/80 font-medium'
               )}
@@ -202,14 +207,17 @@ export function FileTree({
             >
               {node.name}
             </span>
-            {node.type === 'document' && node.documentSubtitle ? (
-              <span className="block truncate text-xs leading-tight opacity-60 mt-0.5" title={node.documentSubtitle}>
+            {showSubtitle ? (
+              <span
+                className="block truncate text-[10px] leading-tight opacity-60 mt-0.5"
+                title={node.documentSubtitle}
+              >
                 {node.documentSubtitle}
               </span>
             ) : null}
           </span>
           {isBank && docsLoaded ? (
-            <span className="text-xs tabular-nums opacity-50 group-hover:opacity-70">
+            <span className="shrink-0 text-xs tabular-nums opacity-50 group-hover:opacity-70">
               {docs.length}
             </span>
           ) : isLoadingDocs ? (
@@ -239,8 +247,8 @@ export function FileTree({
   }
 
   return (
-    <ScrollArea className="h-full">
-      <div className="py-3 px-2">
+    <ScrollArea className="h-full min-w-0">
+      <div className="min-w-0 max-w-full py-3 px-1.5">
         <button
           type="button"
           className="w-full flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-[hsl(var(--vault-muted))] px-3 mb-2 opacity-70 hover:opacity-100"

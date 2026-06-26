@@ -249,7 +249,7 @@ export function AppShell({ user, teams }: AppShellProps) {
       <aside
         className={cn(
           'relative flex flex-col border-r border-[hsl(var(--vault-border))] bg-[hsl(var(--vault))] overflow-hidden shrink-0 transition-all duration-200 ease-out will-change-[width,opacity]',
-          sidebarOpen ? 'w-56 opacity-100' : 'w-0 opacity-0 border-r-0',
+          sidebarOpen ? 'w-60 opacity-100' : 'w-0 opacity-0 border-r-0',
         )}
       >
         <div className="px-3 py-2.5 border-b border-[hsl(var(--vault-border))]">
