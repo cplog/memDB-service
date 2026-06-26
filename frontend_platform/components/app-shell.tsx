@@ -335,6 +335,7 @@ export function AppShell({ user, teams }: AppShellProps) {
             ) : null}
           </div>
 
+          {!(activeView === 'sources' && selectedDocumentId) ? (
           <div
             className={cn(
               'px-4 py-1.5 border-t border-border text-[11px] leading-relaxed',
@@ -345,6 +346,7 @@ export function AppShell({ user, teams }: AppShellProps) {
           >
             {scopeLine}
           </div>
+          ) : null}
 
           <div
             className="flex gap-1 px-3 py-1 border-t border-border overflow-x-auto items-center"

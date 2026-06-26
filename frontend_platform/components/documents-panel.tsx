@@ -103,6 +103,7 @@ export function DocumentsPanel({
   const [savingTags, setSavingTags] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const replaceInputRef = useRef<HTMLInputElement>(null)
+  const readerRef = useRef<HTMLDivElement>(null)
 
   const loadList = useCallback(async () => {
     setLoadingList(true)
@@ -224,7 +225,12 @@ export function DocumentsPanel({
   useEffect(() => {
     setEditing(false)
     setDraft('')
+    readerRef.current?.scrollTo({ top: 0 })
   }, [activeId])
+
+  useEffect(() => {
+    readerRef.current?.scrollTo({ top: 0 })
+  }, [detail?.id])
 
   function startEdit() {
     if (!detail) return
@@ -309,19 +315,19 @@ export function DocumentsPanel({
   }
 
   return (
-    <section className="flex flex-col flex-1 min-h-0">
-      <div className="flex items-center gap-4 px-6 py-4 border-b bg-[hsl(var(--card))]">
-        <div className="min-w-0 flex-1">
-          <h1 className="text-lg font-medium tracking-tight">Sources</h1>
-          <p className="text-sm text-[hsl(var(--vault-muted))] mt-1">
+    <section className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
+      <div className="flex items-center gap-3 px-4 py-1.5 border-b bg-[hsl(var(--card))] sm:px-5">
+        <div className="min-w-0 flex-1 flex items-baseline gap-2">
+          <span className="text-sm font-medium tracking-tight">Sources</span>
+          <span className="text-xs text-[hsl(var(--vault-muted))] truncate">
             {teamLabel ?? bankId}
-          </p>
+          </span>
         </div>
         {onToggleUpload ? (
           <Button
             size="sm"
             variant="secondary"
-            className="text-sm"
+            className="text-sm min-h-[36px]"
             onClick={onToggleUpload}
           >
             {uploadOpen ? 'Close upload' : 'Upload'}
@@ -330,7 +336,7 @@ export function DocumentsPanel({
         <Button
           variant="ghost"
           size="sm"
-          className="text-sm text-[hsl(var(--vault-muted))]"
+          className="text-sm min-h-[36px] text-[hsl(var(--vault-muted))]"
           onClick={loadList}
           disabled={loadingList}
           aria-label="Refresh documents"
@@ -357,8 +363,8 @@ export function DocumentsPanel({
         </div>
       ) : null}
 
-      <div className="flex-1 min-h-0 overflow-auto">
-        <article className="min-h-full bg-[hsl(var(--canvas))]">
+      <div className="relative flex-1 min-h-0 overflow-hidden">
+        <article className="absolute inset-0 flex min-h-0 flex-col overflow-hidden bg-[hsl(var(--canvas))]">
           {error && activeId && !loadingDetail ? (
             <div className="p-6">
               <p className="text-sm text-[hsl(var(--error-fg))]">{error}</p>
@@ -391,36 +397,42 @@ export function DocumentsPanel({
               <Spinner className="w-6 h-6 text-[hsl(var(--vault-muted))]" />
             </div>
           ) : detail ? (
-            <>
-              <div className="sticky top-0 z-10 bg-[hsl(var(--canvas))]/95 backdrop-blur border-b">
-                <div className="px-4 py-3 sm:px-6 lg:px-8">
-                <div className="flex flex-wrap items-start gap-3">
-                  <div className="min-w-0 flex-1">
-                    <h2 className="text-xl font-semibold tracking-tight break-words text-foreground">
+            <div className="grid min-h-0 flex-1 xl:grid-cols-[minmax(0,1fr)_17rem]">
+              {/* Metadata rail — right on xl, compact strip above reader on smaller screens */}
+              <aside className="order-1 shrink-0 border-b border-border bg-[hsl(var(--vault))]/30 px-4 py-3 xl:order-2 xl:border-b-0 xl:border-l xl:overflow-y-auto xl:overscroll-contain">
+                <div className="source-meta-rail space-y-3">
+                  <div>
+                    <p className="text-[10px] font-medium uppercase tracking-widest text-[hsl(var(--vault-muted))] mb-1">
+                      Source
+                    </p>
+                    <h2 className="text-sm font-medium leading-snug break-words text-foreground">
                       {documentDisplayName(detail.id, detail.document_metadata)}
                     </h2>
                     {documentDisplayName(detail.id, detail.document_metadata) !== detail.id ? (
-                      <p className="text-xs text-[hsl(var(--vault-muted))] mt-1 break-all font-mono opacity-70">{detail.id}</p>
+                      <p className="text-[10px] text-[hsl(var(--vault-muted))] mt-1 break-all font-mono opacity-70">
+                        {detail.id}
+                      </p>
                     ) : null}
                   </div>
-                  <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+
+                  <div className="flex flex-wrap gap-1.5">
                     {editing ? (
                       <>
                         <Button
                           type="button"
                           size="sm"
-                          className="text-sm"
+                          className="h-8 text-xs"
                           disabled={saving || !draft.trim()}
                           onClick={() => void handleSaveEdit()}
                         >
-                          {saving ? <Spinner className="mr-2" /> : null}
+                          {saving ? <Spinner className="mr-1.5" /> : null}
                           Save
                         </Button>
                         <Button
                           type="button"
                           variant="outline"
                           size="sm"
-                          className="text-sm"
+                          className="h-8 text-xs"
                           disabled={saving}
                           onClick={cancelEdit}
                         >
@@ -433,159 +445,164 @@ export function DocumentsPanel({
                           type="button"
                           variant="outline"
                           size="sm"
-                          className="text-sm"
+                          className="h-8 text-xs"
                           disabled={replacing || deleting}
                           onClick={startEdit}
                         >
-                          Edit text
+                          Edit
                         </Button>
                         <Button
                           type="button"
                           variant="outline"
                           size="sm"
-                          className="text-sm text-[hsl(var(--error-fg))] border-[hsl(var(--error-border))] hover:bg-[hsl(var(--error-bg))]"
+                          className="h-8 text-xs text-[hsl(var(--error-fg))] border-[hsl(var(--error-border))] hover:bg-[hsl(var(--error-bg))]"
                           disabled={replacing || deleting}
                           onClick={() => setDeleteOpen(true)}
                         >
-                          {deleting ? <Spinner className="mr-2" /> : null}
+                          {deleting ? <Spinner className="mr-1.5" /> : null}
                           Delete
                         </Button>
                       </>
                     )}
                   </div>
-                </div>
-                <div className="flex flex-wrap items-center gap-2.5 mt-3">
-                  <Badge variant="secondary" className="text-xs font-medium px-2.5 py-0.5">
-                    {detail.memory_unit_count} facts
-                  </Badge>
-                  {detail.nodes_by_fact_type &&
-                    Object.entries(detail.nodes_by_fact_type).map(([k, v]) => (
-                      <Badge
-                        key={k}
-                        variant="outline"
-                        className={cn(
-                          'text-xs capitalize font-medium px-2.5 py-0.5',
-                          factTypeStyle(k).badge
-                        )}
-                      >
-                        {factTypeStyle(k).label} {v}
-                      </Badge>
-                    ))}
-                  {detail.nodes_by_fact_type?.observation ? (
-                    <span className="text-xs text-[hsl(var(--vault-muted))] w-full lg:w-auto">
-                      Observations are consolidated beliefs linked to this source — not extra uploads.
-                    </span>
-                  ) : null}
-                  <span className="text-xs text-[hsl(var(--vault-muted))] lg:ml-auto">
-                    Updated {formatDate(detail.updated_at)}
-                  </span>
-                  {saveSuccess ? (
-                    <span className="text-sm font-medium text-[hsl(var(--success-fg))] ml-3">
-                      Saved — updating extracted knowledge
-                    </span>
-                  ) : null}
-                  {onViewKnowledge && detail.memory_unit_count > 0 ? (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-sm ml-auto text-[hsl(var(--vault-active))]"
-                      onClick={onViewKnowledge}
-                    >
-                      View facts
-                    </Button>
-                  ) : null}
-                  {onContinueSource ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-sm text-[hsl(var(--vault-active))]"
-                      onClick={() => onContinueSource(detail.id)}
-                    >
-                      Continue this source
-                    </Button>
-                  ) : null}
-                </div>
-                {(detail.tags?.length || userRole === 'consultant') ? (
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
-                    {userRole === 'consultant' ? (
-                      <div className="flex w-full max-w-xl gap-2">
-                        <input
-                          value={tagDraft}
-                          onChange={(e) => setTagDraft(e.target.value)}
-                          placeholder="scope:shared, project:alpha"
-                          className="min-h-[36px] flex-1 rounded-md border border-border bg-[hsl(var(--canvas))] px-3 py-1.5 text-sm"
-                        />
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          className="text-sm shrink-0"
-                          disabled={savingTags}
-                          onClick={() => void handleSaveTags()}
+
+                  <div className="flex flex-wrap gap-1.5">
+                    <Badge variant="secondary" className="text-[10px] font-medium px-2 py-0">
+                      {detail.memory_unit_count} facts
+                    </Badge>
+                    {detail.nodes_by_fact_type &&
+                      Object.entries(detail.nodes_by_fact_type).map(([k, v]) => (
+                        <Badge
+                          key={k}
+                          variant="outline"
+                          className={cn(
+                            'text-[10px] capitalize font-medium px-2 py-0',
+                            factTypeStyle(k).badge
+                          )}
                         >
-                          {savingTags ? <Spinner /> : 'Save'}
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="flex flex-wrap gap-2">
-                        {(detail.tags ?? []).map((t) => (
-                          <Badge key={t} variant="outline" className="text-xs font-normal px-2.5 py-0.5">
-                            {t}
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
+                          {factTypeStyle(k).label} {v}
+                        </Badge>
+                      ))}
                   </div>
-                ) : null}
+
+                  <p className="text-[11px] text-[hsl(var(--vault-muted))]">
+                    Updated {formatDate(detail.updated_at)}
+                  </p>
+                  {saveSuccess ? (
+                    <p className="text-[11px] font-medium text-[hsl(var(--success-fg))]">
+                      Saved — updating extracted knowledge
+                    </p>
+                  ) : null}
+
+                  <div className="flex flex-col gap-1">
+                    {onViewKnowledge && detail.memory_unit_count > 0 ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 justify-start px-2 text-xs text-[hsl(var(--vault-active))]"
+                        onClick={onViewKnowledge}
+                      >
+                        View facts
+                      </Button>
+                    ) : null}
+                    {onContinueSource ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 justify-start px-2 text-xs text-[hsl(var(--vault-active))]"
+                        onClick={() => onContinueSource(detail.id)}
+                      >
+                        Continue this source
+                      </Button>
+                    ) : null}
+                    {!editing ? (
+                      <>
+                        <input
+                          ref={replaceInputRef}
+                          type="file"
+                          className="sr-only"
+                          accept=".pdf,.doc,.docx,.txt,.md,.pptx,.xlsx,.csv,.png,.jpg,.jpeg,.webp"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0]
+                            e.target.value = ''
+                            if (file) void handleReplaceFile(file)
+                          }}
+                        />
+                        <button
+                          type="button"
+                          className="h-8 px-2 text-left text-xs text-[hsl(var(--vault-muted))] hover:text-[hsl(var(--vault-active))] transition-colors"
+                          disabled={replacing}
+                          onClick={() => replaceInputRef.current?.click()}
+                        >
+                          {replacing ? <Spinner className="inline mr-1.5" /> : null}
+                          Replace file
+                        </button>
+                      </>
+                    ) : null}
+                  </div>
+
+                  {(detail.tags?.length || userRole === 'consultant') ? (
+                    <div className="space-y-2 pt-2 border-t border-border">
+                      <p className="text-[10px] font-medium uppercase tracking-widest text-[hsl(var(--vault-muted))]">
+                        Tags
+                      </p>
+                      {userRole === 'consultant' ? (
+                        <div className="flex flex-col gap-1.5">
+                          <input
+                            value={tagDraft}
+                            onChange={(e) => setTagDraft(e.target.value)}
+                            placeholder="scope:shared"
+                            className="h-8 rounded-md border border-border bg-[hsl(var(--canvas))] px-2 text-xs"
+                          />
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            className="h-8 text-xs"
+                            disabled={savingTags}
+                            onClick={() => void handleSaveTags()}
+                          >
+                            {savingTags ? <Spinner /> : 'Save tags'}
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex flex-wrap gap-1">
+                          {(detail.tags ?? []).map((t) => (
+                            <Badge key={t} variant="outline" className="text-[10px] font-normal px-2 py-0">
+                              {t}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ) : null}
+                </div>
+              </aside>
+
+              {/* Reader — primary focus */}
+              <div
+                ref={readerRef}
+                className="order-2 min-h-0 overflow-y-auto overscroll-contain xl:order-1"
+              >
+                <div className="source-reader mx-auto w-full max-w-[78ch] px-4 py-5 sm:px-8 lg:px-10">
+                  {editing ? (
+                    <>
+                      <p className="text-sm text-[hsl(var(--vault-muted))] mb-4 leading-relaxed">
+                        Editing rebuilds extracted facts. Searchable in a few minutes.
+                      </p>
+                      <Textarea
+                        value={draft}
+                        onChange={(e) => setDraft(e.target.value)}
+                        className="min-h-[60vh] text-base leading-relaxed resize-y p-4"
+                      />
+                    </>
+                  ) : (
+                    <div className="prose prose-slate max-w-none">
+                      <MarkdownPreview source={detail.original_text ?? ''} />
+                    </div>
+                  )}
                 </div>
               </div>
-              <div className="px-4 py-6 sm:px-6 lg:px-8">
-                <div className="source-reader mx-auto w-full max-w-[78ch]">
-                {editing ? (
-                  <>
-                    <p className="text-sm text-[hsl(var(--vault-muted))] mb-4 leading-relaxed">
-                      Editing the raw text will rebuild extracted facts. Processing — searchable in a few minutes.
-                    </p>
-                    <Textarea
-                      value={draft}
-                      onChange={(e) => setDraft(e.target.value)}
-                      className="min-h-[60vh] text-base leading-relaxed resize-y p-4"
-                    />
-                  </>
-                ) : (
-                  <div className="prose prose-slate max-w-none">
-                    <MarkdownPreview source={detail.original_text ?? ''} />
-                  </div>
-                )}
-                {!editing ? (
-                  <div className="pt-6 mt-8 border-t border-border flex items-center gap-4">
-                    <input
-                      ref={replaceInputRef}
-                      type="file"
-                      className="sr-only"
-                      accept=".pdf,.doc,.docx,.txt,.md,.pptx,.xlsx,.csv,.png,.jpg,.jpeg,.webp"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0]
-                        e.target.value = ''
-                        if (file) void handleReplaceFile(file)
-                      }}
-                    />
-                    <button
-                      type="button"
-                      className="text-sm font-medium text-[hsl(var(--vault-muted))] hover:text-[hsl(var(--vault-active))] transition-colors"
-                      disabled={replacing}
-                      onClick={() => replaceInputRef.current?.click()}
-                    >
-                      {replacing ? <Spinner className="inline mr-2" /> : null}
-                      Replace file
-                    </button>
-                    <p className="text-xs text-[hsl(var(--vault-muted))] opacity-80">
-                      Replaces source text and rebuilds extracted facts.
-                    </p>
-                  </div>
-                ) : null}
-                </div>
-              </div>
-            </>
+            </div>
           ) : null}
         </article>
       </div>
