@@ -1,0 +1,22 @@
+{
+  "name": "db-mem-api",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --import ./node_modules/tsx/dist/loader.mjs --watch src/index.ts",
+    "start": "node --import ./node_modules/tsx/dist/loader.mjs src/index.ts",
+    "check": "tsc --noEmit",
+    "selfcheck": "node --import ./node_modules/tsx/dist/loader.mjs ../shared/lib/selfcheck.ts"
+ },
+  "dependencies": {
+    "@hono/node-server": "^1.14.4",
+    "@vectorize-io/hindsight-client": "^0.8.3",
+    "hono": "^4.8.3",
+    "jose": "^5.9.6",
+    "tsx": "^4.20.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.57",
+    "typescript": "^5.8.3"
+  }
+}

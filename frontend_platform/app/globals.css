@@ -1,0 +1,162 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Restrained & Elegant Light Mode */
+    --background: 0 0% 100%;
+    --foreground: 240 10% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 10%;
+    
+    /* Primary Accent: Vibrant soft green */
+    --primary: 152 60% 45%;
+    --primary-foreground: 0 0% 100%;
+    
+    --secondary: 240 5% 96%;
+    --secondary-foreground: 240 10% 15%;
+    
+    --muted: 240 5% 96%;
+    --muted-foreground: 240 5% 45%;
+    
+    --accent: 152 60% 45%;
+    --accent-foreground: 0 0% 100%;
+    
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    
+    /* Very faint borders */
+    --border: 240 6% 90%;
+    --input: 240 6% 90%;
+    --ring: 152 60% 45%;
+    --radius: 0.5rem;
+
+    /* Sidebar / Vault */
+    --vault: 240 5% 98%;
+    --vault-border: 240 6% 92%;
+    --vault-muted: 240 5% 45%;
+    --vault-active: 152 60% 45%;
+    
+    /* Main Canvas */
+    --canvas: 0 0% 100%;
+
+    --success-bg: 144 87% 96%;
+    --success-border: 145 80% 85%;
+    --success-fg: 141 73% 35%;
+
+    --error-bg: 0 86% 97%;
+    --error-border: 0 74% 85%;
+    --error-fg: 0 84% 45%;
+
+    --warning-bg: 41 100% 95%;
+    --warning-border: 41 100% 85%;
+    --warning-fg: 35 90% 40%;
+
+    --mode-scope: 152 60% 45%;
+    --mode-ops: 220 70% 50%;
+    --mode-ops-muted: 220 70% 95%;
+  }
+
+  [data-workspace-mode='workspace'] {
+    --canvas: 0 0% 100%;
+    --vault: 240 5% 98%;
+    --mode-scope: 152 60% 45%;
+  }
+
+  [data-workspace-mode='overview'] {
+    --canvas: 0 0% 100%;
+    --vault: 240 5% 98%;
+    --mode-scope: 210 50% 50%;
+  }
+
+  [data-workspace-mode='operations'] {
+    --canvas: 0 0% 100%;
+    --vault: 240 5% 96%;
+    --vault-border: 240 6% 88%;
+    --mode-scope: 152 60% 45%;
+    --mode-ops: 220 70% 50%;
+    --mode-ops-muted: 220 70% 92%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+}
+
+/* Markdown preview in light mode */
+.wmde-markdown-var[data-color-mode='dark'],
+.wmde-markdown-var[data-color-mode='light'] {
+  --color-canvas-default: transparent;
+  --color-canvas-subtle: hsl(var(--secondary));
+  --color-fg-default: hsl(var(--foreground));
+  --color-fg-muted: hsl(var(--vault-muted));
+  --color-border-default: hsl(var(--border));
+  --color-accent-fg: hsl(var(--vault-active));
+}
+
+.wiki-md-chunk .wmde-markdown {
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.wiki-md-chunk .wmde-markdown > :first-child {
+  margin-top: 0;
+}
+
+.wiki-md-chunk .wmde-markdown > :last-child {
+  margin-bottom: 0;
+}
+
+.wiki-md-chunk .wmde-markdown h1,
+.wiki-md-chunk .wmde-markdown h2,
+.wiki-md-chunk .wmde-markdown h3 {
+  margin-top: 1.75rem;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+}
+
+.wiki-md-chunk .wmde-markdown h1 {
+  font-size: 1.25rem;
+}
+
+.wiki-md-chunk .wmde-markdown h2 {
+  font-size: 1.125rem;
+}
+
+.wiki-md-chunk .wmde-markdown h3 {
+  font-size: 1rem;
+}
+
+.wiki-body .wiki-md-chunk + .wiki-md-chunk {
+  margin-top: 0.5rem;
+}
+
+.wiki-md-chunk .wmde-markdown table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+
+.wiki-md-chunk .wmde-markdown th,
+.wiki-md-chunk .wmde-markdown td {
+  border: 1px solid hsl(var(--border));
+  padding: 0.35rem 0.5rem;
+  text-align: left;
+}
+
+.wiki-md-chunk .wmde-markdown th {
+  background: hsl(var(--secondary));
+  font-weight: 500;
+}

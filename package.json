@@ -1,0 +1,23 @@
+{
+  "name": "db-mem",
+  "private": true,
+  "scripts": {
+    "dev": "./start-dev.sh",
+    "dev:stop": "./start-dev.sh --stop",
+    "smoke-test": "bash scripts/uat-smoke.sh",
+    "uat:setup": "node .agents/skills/uat-harness-skill/scripts/setup.mjs --yes",
+    "uat": "node .agents/skills/uat-harness-skill/scripts/uat.mjs",
+    "uat:preflight": "node .agents/skills/uat-harness-skill/scripts/preflight.mjs --pretty",
+    "uat:signals": "node .agents/skills/uat-harness-skill/scripts/context-signals.mjs --pretty",
+    "uat:discover": "node .agents/skills/uat-harness-skill/scripts/discover.mjs --pretty",
+    "uat:tailor": "node .agents/skills/uat-harness-skill/scripts/tailor.mjs --pretty",
+    "uat:review": "node .agents/skills/uat-harness-skill/scripts/review.mjs --pretty",
+    "uat:audit": "node .agents/skills/uat-harness-skill/scripts/audit.mjs --pretty",
+    "uat:report": "node .agents/skills/uat-harness-skill/scripts/report.mjs --pretty",
+    "uat:tier-a": "bash .agents/skills/uat-harness-skill/scripts/tier-a.sh",
+    "uat:tier-b": "bash .agents/skills/uat-harness-skill/scripts/tier-b.sh",
+    "uat:tier-c": "bash .agents/skills/uat-harness-skill/scripts/tier-c.sh",
+    "uat:tier-d": "bash .agents/skills/uat-harness-skill/scripts/tier-d.sh",
+    "uat:browser": "bash .agents/skills/uat-harness-skill/scripts/browser.sh"
+  }
+}

@@ -1,0 +1,150 @@
+# db_mem — Hindsight consulting memory portal UAT manifest
+project_id: db-mem
+platform: web
+framework: nextjs
+base_url: http://127.0.0.1:3000
+
+preflight:
+  health_path: /login
+
+docs:
+  uat: setup/docs/guides/UAT.md
+  userflow: setup/docs/guides/USERFLOW.md
+  agents: AGENTS.md
+
+project_context:
+  audience: Consultants and client team members using the memory portal
+  product_surface: /
+  auth: Demo JWT login — email only, cookie portal-session
+  critical_journeys:
+    - Login → team sidebar → retain memory
+    - Login → switch team → recall query
+    - Consultant bootstrap team bank (PUT /api/banks)
+  locale: en — 1280px laptop viewport
+  out_of_scope:
+    - Hindsight Control Plane UI (Railway dashboard)
+    - Production bank migration co-ech-* → team-*
+    - File upload parser edge cases
+  notes:
+    - API served by backend_platform :8000; portal rewrites /api/*
+    - Quote HINDSIGHT_API_KEY in .env if value contains $
+
+locale:
+  default: en
+  toggle: false
+  viewport_min: 1280
+  viewport_max: 1440
+
+safety_notes:
+  - Confirm with the user before destructive_commands
+  - Delete temp screenshots and scratch files after UAT
+  - Production Hindsight DB — retain only test content in UAT
+
+tiers:
+  static:
+    - npm run check:scope --prefix frontend_platform
+    - npm run check --prefix backend_platform
+    - npm run build --prefix frontend_platform
+  smoke:
+    - npm run smoke-test
+  smoke_url_flag: "--url"
+  worker: []
+  worker_optional: []
+  extra_services:
+    - name: api-backend
+      url: http://127.0.0.1:8000
+      health: /health
+
+flows:
+  - id: login
+    name: Login
+    path: [/login]
+    critical: true
+    checks:
+      - email field and submit visible
+      - demo login sets session cookie
+      - redirect to workspace after login
+
+  - id: team-workspace
+    name: Team workspace
+    path: [/]
+    critical: true
+    checks:
+      - team sidebar lists accessible teams for role
+      - active team label shown in header
+      - member sees only assigned teams (alice → product only)
+
+  - id: retain
+    name: Retain memory
+    path: [/]
+    critical: true
+    checks:
+      - editor accepts content for active team bank
+      - retain succeeds for team-{teamId} bank
+      - tags scoped to user and team for members
+
+  - id: recall
+    name: Recall / Reflect
+    path: [/]
+    critical: true
+    checks:
+      - recall query returns memories for active bank
+      - cross-team bank access denied for member (engineering when alice)
+
+  - id: consultant-bootstrap
+    name: Consultant bank bootstrap
+    path: [/]
+    checks:
+      - consultant can PUT /api/banks with teamId
+      - member receives 403 on bank bootstrap
+
+deferred_coverage:
+  - id: graph-mock
+    path: /api/banks/*/graph
+    reason: now backed by listMemories — revisit when Hindsight exposes link types
+  - id: file-upload
+    path: /api/upload
+    reason: manual file fixture required
+  - id: hindsight-control-plane
+    path: external
+    reason: Railway dashboard — not portal surface
+
+reporting:
+  enabled: true
+  evidence_dir: .uat/evidence
+  report_dir: .uat/reports
+  severity_threshold: low
+  auto_capture: true
+  auto_diagnose: true
+  gh_export:
+    enabled: false
+    repo: ''
+    labels: [bug, uat]
+    assignees: []
+
+alert_routes: {}
+
+destructive_commands: []
+
+environments:
+  local:
+    read_only: true
+    required_env:
+      - HINDSIGHT_API_URL
+      - HINDSIGHT_API_KEY
+      - JWT_SECRET
+
+auth:
+  type: demo
+  login_path: /login
+  demo_accounts:
+    - email: alice@ech.com
+      role: member
+      teams: [product]
+    - email: eric@consultant.com
+      role: consultant
+      teams: all
+
+selector_strategy:
+  primary: data-testid
+  fallback_chain: [aria, text]
