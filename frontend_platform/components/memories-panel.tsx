@@ -45,6 +45,49 @@ function parseEntities(raw: unknown): string[] {
   return []
 }
 
+function relativeTime(iso?: string): string {
+  if (!iso) return ''
+  const diff = Date.now() - new Date(iso).getTime()
+  if (diff < 0) return 'just now'
+  const sec = Math.floor(diff / 1000)
+  if (sec < 60) return 'just now'
+  const min = Math.floor(sec / 60)
+  if (min < 60) return `${min}m ago`
+  const hr = Math.floor(min / 60)
+  if (hr < 24) return `${hr}h ago`
+  const d = Math.floor(hr / 24)
+  if (d < 30) return `${d}d ago`
+  const mo = Math.floor(d / 30)
+  if (mo < 12) return `${mo}mo ago`
+  return `${Math.floor(mo / 12)}y ago`
+}
+
+function ExpandableText({ text, className }: { text: string; className?: string }) {
+  const [expanded, setExpanded] = useState(false)
+  const needsTruncate = text.length > 280
+
+  if (!needsTruncate) {
+    return <p className={className}>{text}</p>
+  }
+
+  return (
+    <div>
+      <p className={cn(className, !expanded && 'line-clamp-3')}>
+        {text}
+      </p>
+      <button
+        type="button"
+        onClick={() => setExpanded(!expanded)}
+        className="text-xs text-[hsl(var(--vault-muted))] hover:text-[hsl(var(--vault-active))] mt-1 transition-colors"
+      >
+        {expanded ? 'Show less' : 'Show more'}
+      </button>
+    </div>
+  )
+}
+
+type GroupMode = 'none' | 'type' | 'document'
+
 export function MemoriesPanel({
   bankId,
   teamLabel,
@@ -61,6 +104,7 @@ export function MemoriesPanel({
   const [error, setError] = useState<string | null>(null)
   const [filter, setFilter] = useState('')
   const [typeFilter, setTypeFilter] = useState<string | null>(null)
+  const [groupMode, setGroupMode] = useState<GroupMode>('none')
   const [deleteTarget, setDeleteTarget] = useState<MemoryRow | null>(null)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -81,6 +125,26 @@ export function MemoriesPanel({
         : items,
     [items, typeFilter]
   )
+
+  const groupedItems = useMemo(() => {
+    if (groupMode === 'type') {
+      const groups: Record<string, MemoryRow[]> = {}
+      for (const m of visibleItems) {
+        const t = m.fact_type ?? 'other'
+        ;(groups[t] ??= []).push(m)
+      }
+      return Object.entries(groups).sort((a, b) => b[1].length - a[1].length)
+    }
+    if (groupMode === 'document') {
+      const groups: Record<string, MemoryRow[]> = {}
+      for (const m of visibleItems) {
+        const d = m.document_id ?? '(untitled)'
+        ;(groups[d] ??= []).push(m)
+      }
+      return Object.entries(groups).sort((a, b) => b[1].length - a[1].length)
+    }
+    return null
+  }, [visibleItems, groupMode])
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -144,6 +208,87 @@ export function MemoriesPanel({
     }
   }
 
+  function renderFactCard(mem: MemoryRow) {
+    return (
+      <div
+        key={mem.id}
+        className="group rounded-lg border border-border bg-[hsl(var(--card))] px-5 py-4 hover:border-[hsl(var(--vault-active))]/30 hover:shadow-sm transition-all"
+      >
+        <ExpandableText
+          text={mem.text ?? '(empty)'}
+          className="text-[15px] leading-relaxed text-foreground"
+        />
+
+        <div className="flex flex-wrap items-center gap-2 mt-3">
+          {mem.fact_type ? (
+            <Badge
+              variant="outline"
+              className={cn(
+                'text-[11px] capitalize font-medium px-2 py-0.5',
+                factTypeStyle(mem.fact_type).badge
+              )}
+            >
+              <span
+                className={cn(
+                  'inline-block w-1.5 h-1.5 rounded-full mr-1.5',
+                  factTypeStyle(mem.fact_type).dot
+                )}
+                aria-hidden
+              />
+              {mem.fact_type}
+            </Badge>
+          ) : null}
+
+          {mem.entities?.map((entity) =>
+            onSelectEntity ? (
+              <button
+                key={entity}
+                type="button"
+                onClick={() => onSelectEntity(entity, entity)}
+                className="text-[11px] rounded-full px-2.5 py-0.5 border border-[hsl(var(--accent))]/20 bg-[hsl(var(--accent))]/5 text-[hsl(var(--vault-active))] hover:bg-[hsl(var(--accent))]/15 hover:border-[hsl(var(--accent))]/40 transition-colors cursor-pointer"
+              >
+                {entity}
+              </button>
+            ) : (
+              <Badge key={entity} variant="secondary" className="text-[11px] font-normal">
+                {entity}
+              </Badge>
+            )
+          )}
+
+          <span className="text-[11px] text-[hsl(var(--vault-muted))]/60 ml-auto hidden sm:inline">
+            {relativeTime(mem.created_at)}
+          </span>
+
+          {mem.document_id && onOpenDocument ? (
+            <button
+              type="button"
+              onClick={() => onOpenDocument(mem.document_id!)}
+              className="text-[11px] text-[hsl(var(--vault-active))] hover:underline truncate max-w-[180px] text-left hidden sm:inline"
+            >
+              {truncateDocumentLabel(documentDisplayName(mem.document_id))}
+            </button>
+          ) : mem.document_id ? (
+            <span className="text-[11px] text-[hsl(var(--vault-muted))] truncate max-w-[180px] hidden sm:inline">
+              {truncateDocumentLabel(documentDisplayName(mem.document_id))}
+            </span>
+          ) : null}
+
+          <button
+            type="button"
+            className="text-[11px] text-[hsl(var(--vault-muted))] hover:text-[hsl(var(--error-fg))] shrink-0 transition-colors opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+            onClick={() => {
+              setDeleteTarget(mem)
+              setDeleteOpen(true)
+            }}
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <section className="flex flex-col flex-1 min-h-0">
       <div className="px-6 py-5 border-b bg-[hsl(var(--card))]">
@@ -193,7 +338,7 @@ export function MemoriesPanel({
         </div>
 
         {items.length > 0 ? (
-          <div className="flex flex-wrap gap-2 mt-4">
+          <div className="flex flex-wrap items-center gap-2 mt-4">
             <button
               type="button"
               onClick={() => setTypeFilter(null)}
@@ -222,6 +367,25 @@ export function MemoriesPanel({
                 </button>
               ) : null
             )}
+
+            <div className="ml-auto flex items-center gap-1 text-[11px] text-[hsl(var(--vault-muted))]">
+              <span className="hidden sm:inline">Group:</span>
+              {(['none', 'type', 'document'] as const).map((mode) => (
+                <button
+                  key={mode}
+                  type="button"
+                  onClick={() => setGroupMode(mode)}
+                  className={cn(
+                    'rounded px-1.5 py-0.5 capitalize transition-colors',
+                    groupMode === mode
+                      ? 'bg-[hsl(var(--secondary))] text-foreground font-medium'
+                      : 'hover:bg-[hsl(var(--secondary))]/50'
+                  )}
+                >
+                  {mode === 'none' ? 'List' : mode}
+                </button>
+              ))}
+            </div>
           </div>
         ) : null}
       </div>
@@ -276,78 +440,47 @@ export function MemoriesPanel({
               </Button>
             ) : null}
           </div>
-        ) : (
-          <ul className="divide-y divide-border">
-            {visibleItems.map((mem) => (
-              <li key={mem.id} className="px-6 py-5 hover:bg-[hsl(var(--secondary))]/50 transition-colors">
-                <p className="text-base leading-relaxed text-foreground">{mem.text ?? '(empty)'}</p>
-                <div className="flex flex-wrap items-center gap-3 mt-3">
-                  {mem.fact_type ? (
+        ) : groupedItems ? (
+          <div className="p-4 space-y-4">
+            {groupedItems.map(([key, mems]) => (
+              <div key={key}>
+                <div className="flex items-center gap-2 mb-2 px-1">
+                  {groupMode === 'type' ? (
                     <Badge
                       variant="outline"
                       className={cn(
-                        'text-xs capitalize font-medium px-2.5 py-0.5',
-                        factTypeStyle(mem.fact_type).badge
+                        'text-[11px] capitalize font-medium px-2 py-0.5',
+                        factTypeStyle(key).badge
                       )}
                     >
                       <span
                         className={cn(
                           'inline-block w-1.5 h-1.5 rounded-full mr-1.5',
-                          factTypeStyle(mem.fact_type).dot
+                          factTypeStyle(key).dot
                         )}
                         aria-hidden
                       />
-                      {mem.fact_type}
+                      {key}
                     </Badge>
-                  ) : null}
-                  {mem.entities?.map((entity) =>
-                    onSelectEntity ? (
-                      <button
-                        key={entity}
-                        type="button"
-                        onClick={() =>
-                          onSelectEntity(
-                            `entity:${entity.toLowerCase().replace(/\s+/g, '-')}`,
-                            entity
-                          )
-                        }
-                        className="text-xs rounded-md px-2 py-1 bg-[hsl(var(--secondary))] text-[hsl(var(--vault-active))] hover:bg-[hsl(var(--accent))]/10 transition-colors"
-                      >
-                        {entity}
-                      </button>
-                    ) : (
-                      <Badge key={entity} variant="secondary" className="text-xs font-normal">
-                        {entity}
-                      </Badge>
-                    )
-                  )}
-                  {mem.document_id && onOpenDocument ? (
-                    <button
-                      type="button"
-                      onClick={() => onOpenDocument(mem.document_id!)}
-                      className="text-xs text-[hsl(var(--vault-active))] hover:underline truncate max-w-full text-left"
-                    >
-                      {truncateDocumentLabel(documentDisplayName(mem.document_id))}
-                    </button>
-                  ) : mem.document_id ? (
-                    <span className="text-xs text-[hsl(var(--vault-muted))] truncate">
-                      {truncateDocumentLabel(documentDisplayName(mem.document_id))}
+                  ) : (
+                    <span className="text-xs font-medium text-[hsl(var(--vault-muted))]">
+                      {key === '(untitled)' ? 'Untitled' : truncateDocumentLabel(documentDisplayName(key))}
                     </span>
-                  ) : null}
-                  <button
-                    type="button"
-                    className="ml-auto text-xs text-[hsl(var(--vault-muted))] hover:text-[hsl(var(--error-fg))] shrink-0 transition-colors"
-                    onClick={() => {
-                      setDeleteTarget(mem)
-                      setDeleteOpen(true)
-                    }}
-                  >
-                    Delete
-                  </button>
+                  )}
+                  <span className="text-[11px] text-[hsl(var(--vault-muted))]/60">
+                    {mems.length} {mems.length === 1 ? 'fact' : 'facts'}
+                  </span>
                 </div>
-              </li>
+                <div className="space-y-2">
+                  {mems.map(renderFactCard)}
+                </div>
+              </div>
             ))}
-          </ul>
+          </div>
+        ) : (
+          <div className="p-4 space-y-2">
+            {visibleItems.map(renderFactCard)}
+          </div>
         )}
       </ScrollArea>
 

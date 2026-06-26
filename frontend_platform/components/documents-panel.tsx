@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Textarea } from '@/components/ui/textarea'
 import { Spinner } from './hindsight-icons'
@@ -102,6 +103,10 @@ export function DocumentsPanel({
   const [tagDraft, setTagDraft] = useState('')
   const [savingTags, setSavingTags] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const tagDraftList = useMemo(
+    () => tagDraft.split(',').map((t) => t.trim()).filter(Boolean),
+    [tagDraft]
+  )
   const factTypeBadges = useMemo(() => {
     if (!detail?.nodes_by_fact_type) return null
     return Object.entries(detail.nodes_by_fact_type).map(([k, v]) => (
@@ -388,24 +393,95 @@ export function DocumentsPanel({
               </Button>
             </div>
           ) : !activeId ? (
-            <div className="flex flex-col items-center justify-center flex-1 px-6 py-20 text-center gap-4">
-              <p className="text-base text-[hsl(var(--vault-muted))] max-w-md leading-relaxed">
-                Select a source from the vault sidebar to read retained text and extracted facts.
-              </p>
-              {docs.length === 0 && !loadingList ? (
-                <div className="flex flex-wrap gap-3 justify-center mt-2">
-                  {onToggleUpload ? (
-                    <Button variant="secondary" size="sm" className="text-sm" onClick={onToggleUpload}>
-                      Upload
-                    </Button>
-                  ) : null}
-                  {onAddNote ? (
-                    <Button variant="outline" size="sm" className="text-sm" onClick={onAddNote}>
-                      Add note
-                    </Button>
-                  ) : null}
+            <div className="flex flex-col h-full overflow-auto">
+              <div className="px-6 py-5 border-b bg-[hsl(var(--card))]">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium tracking-tight">{teamLabel ?? bankId}</p>
+                    <p className="text-xs text-[hsl(var(--vault-muted))] mt-0.5">
+                      {docs.length} document{docs.length === 1 ? '' : 's'} · {docs.reduce((sum, d) => sum + (d.memory_unit_count ?? 0), 0)} facts
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    {onToggleUpload ? (
+                      <Button size="sm" variant="secondary" className="text-sm h-8" onClick={onToggleUpload}>
+                        Upload
+                      </Button>
+                    ) : null}
+                    {onAddNote ? (
+                      <Button size="sm" variant="outline" className="text-sm h-8" onClick={onAddNote}>
+                        Add note
+                      </Button>
+                    ) : null}
+                  </div>
                 </div>
-              ) : null}
+              </div>
+
+              <div className="flex-1 min-h-0 overflow-auto px-6 py-4">
+                {loadingList ? (
+                  <div className="flex justify-center py-12">
+                    <Spinner className="w-5 h-5 text-[hsl(var(--vault-muted))]" />
+                  </div>
+                ) : docs.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-16 text-center gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-[hsl(var(--secondary))] flex items-center justify-center">
+                      <svg viewBox="0 0 24 24" className="w-5 h-5 text-[hsl(var(--vault-muted))]" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+                        <polyline points="14 2 14 8 20 8" />
+                      </svg>
+                    </div>
+                    <p className="text-sm text-[hsl(var(--vault-muted))]">No documents yet. Upload a file or add a note to get started.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <p className="text-[11px] font-medium uppercase tracking-wide text-[hsl(var(--vault-muted))] opacity-60 mb-3">
+                      Recent documents
+                    </p>
+                    {docs
+                      .slice()
+                      .sort((a, b) => {
+                        const ta = a.updated_at ? new Date(a.updated_at).getTime() : 0
+                        const tb = b.updated_at ? new Date(b.updated_at).getTime() : 0
+                        return tb - ta
+                      })
+                      .map((doc) => (
+                        <button
+                          key={doc.id}
+                          type="button"
+                          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] hover:bg-[hsl(var(--secondary))] transition-colors text-left group"
+                          onClick={() => onSelectDocument?.(doc.id)}
+                        >
+                          <div className="w-8 h-8 rounded-md bg-[hsl(var(--secondary))] flex items-center justify-center shrink-0">
+                            <svg viewBox="0 0 24 24" className="w-4 h-4 text-[hsl(var(--vault-muted))]" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+                              <polyline points="14 2 14 8 20 8" />
+                            </svg>
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium text-foreground truncate group-hover:text-[hsl(var(--primary))]">
+                              {documentDisplayName(doc.id)}
+                            </p>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              {doc.memory_unit_count != null && doc.memory_unit_count > 0 ? (
+                                <span className="text-[11px] text-[hsl(var(--vault-muted))]">
+                                  {doc.memory_unit_count} fact{doc.memory_unit_count === 1 ? '' : 's'}
+                                </span>
+                              ) : null}
+                              {doc.updated_at ? (
+                                <span className="text-[11px] text-[hsl(var(--vault-muted))] opacity-60">
+                                  {formatDate(doc.updated_at)}
+                                </span>
+                              ) : null}
+                            </div>
+                          </div>
+                          <svg viewBox="0 0 16 16" className="w-4 h-4 text-[hsl(var(--vault-muted))] opacity-0 group-hover:opacity-60 transition-opacity shrink-0" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                            <path d="M6 4l4 4-4 4" />
+                          </svg>
+                        </button>
+                      ))}
+                  </div>
+                )}
+              </div>
             </div>
           ) : loadingDetail ? (
             <div className="flex justify-center py-24">
@@ -414,165 +490,193 @@ export function DocumentsPanel({
           ) : detail ? (
             <div className="grid min-h-0 flex-1 xl:grid-cols-[minmax(0,1fr)_17rem]">
               {/* Metadata rail — right on xl, compact strip above reader on smaller screens */}
-              <aside className="order-1 shrink-0 border-b border-border bg-[hsl(var(--vault))]/30 px-4 py-3 xl:order-2 xl:border-b-0 xl:border-l xl:overflow-y-auto xl:overscroll-contain">
-                <div className="source-meta-rail space-y-3">
-                  <div>
-                    <p className="text-xs font-medium uppercase tracking-widest text-[hsl(var(--vault-muted))] mb-1">
-                      Source
-                    </p>
+              <aside className="order-1 min-w-0 shrink-0 border-b border-border bg-[hsl(var(--vault))]/30 px-4 py-3 xl:order-2 xl:border-b-0 xl:border-l xl:overflow-y-auto xl:overscroll-contain">
+                <div className="source-meta-rail min-w-0">
+                  {/* Source info */}
+                  <div className="pb-3 border-b border-border">
                     <h2 className="text-sm font-medium leading-snug break-words text-foreground">
                       {documentDisplayName(detail.id, detail.document_metadata)}
                     </h2>
                     {documentDisplayName(detail.id, detail.document_metadata) !== detail.id ? (
-                      <p className="text-xs text-[hsl(var(--vault-muted))] mt-1 break-all font-mono opacity-70">
+                      <p className="text-[11px] text-[hsl(var(--vault-muted))] mt-1 break-all font-mono opacity-60">
                         {detail.id}
                       </p>
                     ) : null}
                   </div>
 
-                  <div className="flex flex-wrap gap-1.5">
-                    {editing ? (
-                      <>
-                        <Button
-                          type="button"
-                          size="sm"
-                          className="h-8 text-xs"
-                          disabled={saving || !draft.trim()}
-                          onClick={() => void handleSaveEdit()}
-                        >
-                          {saving ? <Spinner className="mr-1.5" /> : null}
-                          Save
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="h-8 text-xs"
-                          disabled={saving}
-                          onClick={cancelEdit}
-                        >
-                          Cancel
-                        </Button>
-                      </>
-                    ) : (
-                      <>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="h-8 text-xs"
-                          disabled={replacing || deleting}
-                          onClick={startEdit}
-                        >
-                          Edit
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="h-8 text-xs text-[hsl(var(--error-fg))] border-[hsl(var(--error-border))] hover:bg-[hsl(var(--error-bg))]"
-                          disabled={replacing || deleting}
-                          onClick={() => setDeleteOpen(true)}
-                        >
-                          {deleting ? <Spinner className="mr-1.5" /> : null}
-                          Delete
-                        </Button>
-                      </>
-                    )}
+                  {/* Actions */}
+                  <div className="py-3 border-b border-border">
+                    <div className="flex flex-wrap gap-1.5">
+                      {editing ? (
+                        <>
+                          <Button
+                            type="button"
+                            size="sm"
+                            className="h-8 text-xs"
+                            disabled={saving || !draft.trim()}
+                            onClick={() => void handleSaveEdit()}
+                          >
+                            {saving ? <Spinner className="mr-1.5" /> : null}
+                            Save
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-8 text-xs"
+                            disabled={saving}
+                            onClick={cancelEdit}
+                          >
+                            Cancel
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-8 text-xs"
+                            disabled={replacing || deleting}
+                            onClick={startEdit}
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-8 text-xs text-[hsl(var(--error-fg))] border-[hsl(var(--error-border))] hover:bg-[hsl(var(--error-bg))]"
+                            disabled={replacing || deleting}
+                            onClick={() => setDeleteOpen(true)}
+                          >
+                            {deleting ? <Spinner className="mr-1.5" /> : null}
+                            Delete
+                          </Button>
+                        </>
+                      )}
+                    </div>
                   </div>
 
-                  <div className="flex flex-wrap gap-1.5">
-                    <Badge variant="secondary" className="text-xs font-medium px-2 py-0">
-                      {detail.memory_unit_count} facts
-                    </Badge>
-                    {factTypeBadges}
-                  </div>
-
-                  <p className="text-xs text-[hsl(var(--vault-muted))]">
-                    Updated {formatDate(detail.updated_at)}
-                  </p>
-                  {saveSuccess ? (
-                    <p className="text-xs font-medium text-[hsl(var(--success-fg))]">
-                      Saved — updating extracted knowledge
+                  {/* Facts summary */}
+                  <div className="py-3 border-b border-border">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <Badge variant="secondary" className="text-xs font-medium px-2 py-0">
+                        {detail.memory_unit_count} facts
+                      </Badge>
+                      {factTypeBadges}
+                    </div>
+                    <p className="text-[11px] text-[hsl(var(--vault-muted))] mt-2">
+                      Updated {formatDate(detail.updated_at)}
                     </p>
-                  ) : null}
-
-                  <div className="flex flex-col gap-1">
-                    {onViewKnowledge && detail.memory_unit_count > 0 ? (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 justify-start px-2 text-xs text-[hsl(var(--vault-active))]"
-                        onClick={onViewKnowledge}
-                      >
-                        View facts
-                      </Button>
-                    ) : null}
-                    {onContinueSource ? (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 justify-start px-2 text-xs text-[hsl(var(--vault-active))]"
-                        onClick={() => onContinueSource(detail.id)}
-                      >
-                        Continue this source
-                      </Button>
-                    ) : null}
-                    {!editing ? (
-                      <>
-                        <input
-                          ref={replaceInputRef}
-                          type="file"
-                          className="sr-only"
-                          accept=".pdf,.doc,.docx,.txt,.md,.pptx,.xlsx,.csv,.png,.jpg,.jpeg,.webp"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0]
-                            e.target.value = ''
-                            if (file) void handleReplaceFile(file)
-                          }}
-                        />
-                        <button
-                          type="button"
-                          className="h-8 px-2 text-left text-xs text-[hsl(var(--vault-muted))] hover:text-[hsl(var(--vault-active))] transition-colors"
-                          disabled={replacing}
-                          onClick={() => replaceInputRef.current?.click()}
-                        >
-                          {replacing ? <Spinner className="inline mr-1.5" /> : null}
-                          Replace file
-                        </button>
-                      </>
+                    {saveSuccess ? (
+                      <p className="text-[11px] font-medium text-[hsl(var(--success-fg))] mt-1">
+                        Saved — updating extracted knowledge
+                      </p>
                     ) : null}
                   </div>
 
+                  {/* Quick links */}
+                  <div className="py-3 border-b border-border">
+                    <div className="flex flex-col gap-0.5">
+                      {onViewKnowledge && detail.memory_unit_count > 0 ? (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 justify-start px-2 text-xs text-[hsl(var(--vault-active))]"
+                          onClick={onViewKnowledge}
+                        >
+                          View facts
+                        </Button>
+                      ) : null}
+                      {onContinueSource ? (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 justify-start px-2 text-xs text-[hsl(var(--vault-active))]"
+                          onClick={() => onContinueSource(detail.id)}
+                        >
+                          Continue this source
+                        </Button>
+                      ) : null}
+                      {!editing ? (
+                        <>
+                          <input
+                            ref={replaceInputRef}
+                            type="file"
+                            className="sr-only"
+                            accept=".pdf,.doc,.docx,.txt,.md,.pptx,.xlsx,.csv,.png,.jpg,.jpeg,.webp"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0]
+                              e.target.value = ''
+                              if (file) void handleReplaceFile(file)
+                            }}
+                          />
+                          <button
+                            type="button"
+                            className="h-8 px-2 text-left text-xs text-[hsl(var(--vault-muted))] hover:text-[hsl(var(--vault-active))] transition-colors rounded-md hover:bg-[hsl(var(--secondary))]"
+                            disabled={replacing}
+                            onClick={() => replaceInputRef.current?.click()}
+                          >
+                            {replacing ? <Spinner className="inline mr-1.5" /> : null}
+                            Replace file
+                          </button>
+                        </>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  {/* Tags */}
                   {(detail.tags?.length || userRole === 'consultant') ? (
-                    <div className="space-y-2 pt-2 border-t border-border">
-                      <p className="text-xs font-medium uppercase tracking-widest text-[hsl(var(--vault-muted))]">
+                    <div className="pt-3">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[hsl(var(--vault-muted))] mb-2">
                         Tags
                       </p>
                       {userRole === 'consultant' ? (
-                        <div className="flex flex-col gap-1.5">
-                          <input
-                            id="doc-tags"
-                            value={tagDraft}
-                            onChange={(e) => setTagDraft(e.target.value)}
-                            placeholder="scope:shared"
-                            className="h-8 rounded-md border border-border bg-[hsl(var(--canvas))] px-2 text-xs"
-                            aria-label="Tags"
-                          />
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            className="h-8 text-xs"
-                            disabled={savingTags}
-                            onClick={() => void handleSaveTags()}
-                          >
-                            {savingTags ? <Spinner /> : 'Save tags'}
-                          </Button>
+                        <div className="flex min-w-0 flex-col gap-1.5">
+                          {tagDraftList.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {tagDraftList.map((t) => (
+                                <Badge
+                                  key={t}
+                                  variant="outline"
+                                  className="max-w-full break-all text-xs font-normal px-2 py-0"
+                                >
+                                  {t}
+                                </Badge>
+                              ))}
+                            </div>
+                          ) : null}
+                          <div className="flex gap-1.5">
+                            <Input
+                              id="doc-tags"
+                              value={tagDraft}
+                              onChange={(e) => setTagDraft(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' && tagDraft.trim()) {
+                                  e.preventDefault()
+                                  void handleSaveTags()
+                                }
+                              }}
+                              placeholder="team:product, scope:private"
+                              className="text-xs h-8 flex-1"
+                              aria-label="Tags (comma-separated)"
+                            />
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              className="h-8 text-xs shrink-0"
+                              disabled={savingTags || !tagDraft.trim()}
+                              onClick={() => void handleSaveTags()}
+                            >
+                              {savingTags ? <Spinner /> : 'Save'}
+                            </Button>
+                          </div>
                         </div>
                       ) : (
                         <div className="flex flex-wrap gap-1">
                           {(detail.tags ?? []).map((t) => (
-                            <Badge key={t} variant="outline" className="text-xs font-normal px-2 py-0">
+                            <Badge key={t} variant="outline" className="max-w-full break-all text-xs font-normal px-2 py-0">
                               {t}
                             </Badge>
                           ))}

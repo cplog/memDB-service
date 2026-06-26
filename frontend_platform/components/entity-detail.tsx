@@ -99,48 +99,76 @@ export function EntityDetail({
     setLoading(true)
     setError(null)
     try {
-      let resolvedId = entityId
-      let entityRes = await fetch(
-        `/api/entities/${encodeURIComponent(resolvedId)}?bankId=${encodeURIComponent(bankId)}`
-      )
+      const nameHint =
+        entityName ??
+        (entityId.startsWith('entity:')
+          ? entityId.slice('entity:'.length).replace(/-/g, ' ')
+          : null)
 
-      if (entityRes.status === 404 && entityName) {
+      const fetchEntity = async (id: string): Promise<EntityDetailData | null> => {
+        const res = await fetch(
+          `/api/entities/${encodeURIComponent(id)}?bankId=${encodeURIComponent(bankId)}`
+        )
+        if (!res.ok) return null
+        return (await res.json()) as EntityDetailData
+      }
+
+      const resolveEntity = async (): Promise<EntityDetailData | null> => {
+        if (entityId && !entityId.startsWith('entity:') && !entityId.includes(' ')) {
+          const direct = await fetchEntity(entityId)
+          if (direct) return direct
+        }
+
+        if (!nameHint) return null
+
         const listRes = await fetch(
           `/api/entities?bankId=${encodeURIComponent(bankId)}&limit=200`
         )
-        if (listRes.ok) {
-          const listData = await listRes.json()
-          const match = (listData.items ?? []).find(
-            (e: { canonical_name?: string; id?: string }) =>
-              e.canonical_name?.toLowerCase() === entityName.toLowerCase()
-          )
-          if (match?.id) {
-            resolvedId = String(match.id)
-            entityRes = await fetch(
-              `/api/entities/${encodeURIComponent(resolvedId)}?bankId=${encodeURIComponent(bankId)}`
-            )
-          }
-        }
+        if (!listRes.ok) return null
+
+        const listData = await listRes.json()
+        const hint = nameHint.toLowerCase()
+        const match = (listData.items ?? []).find(
+          (e: { canonical_name?: string; id?: string }) =>
+            e.canonical_name?.toLowerCase() === hint
+        )
+        if (!match?.id) return null
+        return fetchEntity(String(match.id))
       }
 
-      const recallRes = await fetch('/api/recall', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          bankId,
-          query: entityName ?? resolvedId,
+      const [entity, recallRes] = await Promise.all([
+        resolveEntity(),
+        fetch('/api/recall', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            bankId,
+            query: nameHint ?? entityId,
+          }),
         }),
-      })
+      ])
 
-      if (!entityRes.ok) throw new Error(`Entity not found (${entityRes.status})`)
-      setDetail(await entityRes.json())
+      const recallFacts: RecallFact[] = recallRes.ok
+        ? ((await recallRes.json()).memories ?? [])
+        : []
+      setFacts(recallFacts)
 
-      if (recallRes.ok) {
-        const recallData = await recallRes.json()
-        setFacts(recallData.memories ?? [])
-      } else {
-        setFacts([])
+      if (entity) {
+        setDetail(entity)
+        return
       }
+
+      if (nameHint) {
+        setDetail({
+          id: entityId,
+          canonical_name: nameHint,
+          mention_count: recallFacts.length,
+          observations: [],
+        })
+        return
+      }
+
+      throw new Error('Entity not found')
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not load entity')
       setDetail(null)

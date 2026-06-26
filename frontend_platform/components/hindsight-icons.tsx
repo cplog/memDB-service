@@ -66,3 +66,23 @@ export function LeaveIcon({ className }: IconProps) {
     </svg>
   )
 }
+
+export function DocIcon({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 16 16" className={cn('shrink-0', className)} fill="none" aria-hidden>
+      <path d="M4 2.5h5.5L12 5v8.5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1z" stroke="currentColor" strokeWidth="1.1" />
+      <path d="M9.5 2.5V5h2.5" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+export function TeamIcon({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 16 16" className={cn('shrink-0', className)} fill="none" aria-hidden>
+      <circle cx="6" cy="5" r="2.5" stroke="currentColor" strokeWidth="1.1" />
+      <path d="M2 13c0-2.2 1.8-4 4-4s4 1.8 4 4" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" />
+      <circle cx="11" cy="5.5" r="1.8" stroke="currentColor" strokeWidth="0.9" opacity="0.6" />
+      <path d="M12.5 13c0-1.7-1-3-2.5-3.5" stroke="currentColor" strokeWidth="0.9" strokeLinecap="round" opacity="0.6" />
+    </svg>
+  )
+}

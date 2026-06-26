@@ -70,6 +70,7 @@ export function AppShell({ user, teams }: AppShellProps) {
   const cs = user.companySlug
   const firstBank = teams[0] ? teamBankId(teams[0].id, cs) : teamBankId('product', cs)
   const [activeBank, setActiveBank] = useState(firstBank)
+  const [sidebarSearch, setSidebarSearch] = useState('')
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     // ponytail: default sidebar closed on mobile (<768px), open on desktop
     if (typeof window !== 'undefined') return window.innerWidth >= 768
@@ -167,7 +168,7 @@ export function AppShell({ user, teams }: AppShellProps) {
     setActiveBank(bankId)
     setSelectedDocumentId(documentId)
     setSelectedEntity(null)
-    setActiveView('sources')
+    setActiveView('knowledge')
   }, [])
 
   const openEntity = useCallback((entityId: string, entityName: string) => {
@@ -192,6 +193,20 @@ export function AppShell({ user, teams }: AppShellProps) {
   const handleSelectDocument = useCallback((bankId: string, documentId: string) => {
     openDocument(bankId, documentId)
   }, [openDocument])
+
+  const handleDeleteDocument = useCallback(async (bankId: string, documentId: string) => {
+    try {
+      const res = await fetch(`/api/documents/${documentId}?bankId=${encodeURIComponent(bankId)}`, {
+        method: 'DELETE',
+      })
+      if (res.ok) {
+        setSelectedDocumentId((prev) => (prev === documentId ? null : prev))
+        setSourcesRefreshToken((t) => t + 1)
+      }
+    } catch {
+      // Silently fail — user can retry
+    }
+  }, [])
 
   const handleAddNote = useCallback(() => {
     setAttachDocumentId(null)
@@ -222,6 +237,29 @@ export function AppShell({ user, teams }: AppShellProps) {
     }
   }, [activeBank, activeView])
 
+  // Global keyboard shortcuts
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      // Cmd/Ctrl + K → focus search (Query tab)
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault()
+        goToView('search')
+        return
+      }
+      // Number keys 1-7 switch tabs (no modifier, not in input/textarea)
+      if (!e.metaKey && !e.ctrlKey && !e.altKey) {
+        const target = e.target as HTMLElement
+        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return
+        const num = parseInt(e.key, 10)
+        if (num >= 1 && num <= WORK_VIEWS.length) {
+          goToView(WORK_VIEWS[num - 1].id)
+        }
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [goToView])
+
   async function handleLogout() {
     await fetch('/api/auth/logout', { method: 'POST' })
     router.push('/login')
@@ -246,30 +284,72 @@ export function AppShell({ user, teams }: AppShellProps) {
         'h-[100dvh] w-full overflow-hidden flex bg-[hsl(var(--canvas))] text-foreground',
       )}
     >
+      {/* Mobile backdrop */}
+      {sidebarOpen ? (
+        <div
+          className="fixed inset-0 z-30 bg-black/20 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden
+        />
+      ) : null}
+
       <aside
         className={cn(
-          'relative flex flex-col border-r border-[hsl(var(--vault-border))] bg-[hsl(var(--vault))] overflow-hidden shrink-0 transition-all duration-200 ease-out will-change-[width,opacity]',
+          'flex flex-col border-r border-[hsl(var(--vault-border))] bg-[hsl(var(--vault))] overflow-hidden shrink-0 transition-all duration-200 ease-out will-change-[width,opacity]',
+          'fixed inset-y-0 left-0 z-40 md:relative md:z-auto',
           sidebarOpen ? 'w-60 opacity-100' : 'w-0 opacity-0 border-r-0',
         )}
       >
-        <div className="px-3 py-2.5 border-b border-[hsl(var(--vault-border))]">
-          <div className="flex items-center gap-2">
-            <MarkIcon className="w-4 h-4 text-[hsl(var(--vault-active))]" title="Crewio.ai" />
+        <div className="px-3 py-3 border-b border-[hsl(var(--vault-border))]">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-[hsl(var(--accent))] flex items-center justify-center" aria-hidden>
+              <MarkIcon className="w-4 h-4 text-[hsl(var(--accent-foreground))]" />
+            </div>
             <div className="min-w-0">
-              <span className="text-[13px] font-medium tracking-tight text-[hsl(var(--foreground))] block truncate">
+              <span className="text-[13px] font-semibold tracking-tight text-[hsl(var(--foreground))] block truncate">
                 Crewio.ai
               </span>
-              <span className="text-xs text-[hsl(var(--vault-muted))] block truncate">
+              <span className="text-[11px] text-[hsl(var(--vault-muted))] block truncate">
                 {modeMeta.title}
               </span>
             </div>
           </div>
         </div>
 
-        <div className="px-3 pt-2 pb-1">
-          <p className="text-xs font-medium uppercase tracking-widest text-[hsl(var(--vault-muted))]">
-            {modeMeta.sidebarLabel}
-          </p>
+        <div className="px-3 pt-3 pb-1">
+          <div className="flex items-center justify-between">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[hsl(var(--vault-muted))] opacity-60">
+              {modeMeta.sidebarLabel}
+            </p>
+            {pendingOps > 0 ? (
+              <span className="text-[10px] text-[hsl(var(--warning-fg))] bg-[hsl(var(--warning-bg))] border border-[hsl(var(--warning-border))] px-1.5 py-0.5 rounded tabular-nums">
+                {pendingOps} indexing
+              </span>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="px-3 pb-2">
+          <div className="relative">
+            <svg
+              className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[hsl(var(--vault-muted))]"
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            >
+              <circle cx="7" cy="7" r="4.5" />
+              <path d="M10.5 10.5L14 14" />
+            </svg>
+            <input
+              type="text"
+              value={sidebarSearch}
+              onChange={(e) => setSidebarSearch(e.target.value)}
+              placeholder="Search documents…"
+              className="w-full h-8 pl-8 pr-2 text-[12px] rounded-md border border-[hsl(var(--vault-border))] bg-[hsl(var(--canvas))] text-foreground placeholder:text-[hsl(var(--vault-muted))] focus:outline-none focus:ring-1 focus:ring-[hsl(var(--vault-active))]"
+            />
+          </div>
         </div>
 
         <div className="flex-1 overflow-hidden min-w-0">
@@ -278,16 +358,18 @@ export function AppShell({ user, teams }: AppShellProps) {
             activeBank={activeBank}
             activeDocumentId={selectedDocumentId}
             refreshToken={sourcesRefreshToken}
+            searchQuery={sidebarSearch}
             onSelectBank={handleSelectBank}
             onSelectDocument={handleSelectDocument}
+            onDeleteDocument={isConsultant ? handleDeleteDocument : undefined}
             userRole={user.role}
           />
         </div>
 
         <div className="px-3 py-2.5 border-t border-[hsl(var(--vault-border))]">
-          <div className="flex items-center gap-2 min-w-0">
+          <div className="flex items-center gap-2.5 min-w-0">
             <div
-              className="w-7 min-h-[44px] rounded shrink-0 flex items-center justify-center text-xs font-medium bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))]"
+              className="w-7 h-7 rounded-full shrink-0 flex items-center justify-center text-[11px] font-medium bg-[hsl(var(--accent))]/15 text-[hsl(var(--vault-active))]"
               aria-hidden
             >
               {user.name
@@ -297,35 +379,18 @@ export function AppShell({ user, teams }: AppShellProps) {
                 .slice(0, 2)}
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-[12px] font-medium truncate">{user.name}</div>
-              <div className="text-xs text-[hsl(var(--vault-muted))] truncate">{user.email}</div>
+              <div className="text-[12px] font-medium truncate leading-tight">{user.name}</div>
+              <div className="text-[11px] text-[hsl(var(--vault-muted))] truncate">{user.email}</div>
             </div>
             <Button
               variant="ghost"
               size="icon"
-              className="min-h-[44px] w-8 text-[hsl(var(--vault-muted))] hover:text-foreground hover:bg-[hsl(var(--secondary))]"
+              className="w-7 h-7 text-[hsl(var(--vault-muted))] hover:text-foreground hover:bg-[hsl(var(--secondary))]"
               onClick={handleLogout}
               aria-label="Log out"
             >
               <LeaveIcon className="w-3.5 h-3.5" />
             </Button>
-          </div>
-          <div className="mt-1.5 flex items-center gap-1.5 min-w-0">
-            <span
-              className={cn(
-                'text-xs font-medium px-1.5 py-0.5 rounded-sm shrink-0',
-                mode === 'operations'
-                  ? 'bg-[hsl(var(--mode-ops-muted))] text-[hsl(var(--mode-ops))]'
-                  : mode === 'overview'
-                    ? 'bg-[hsl(var(--secondary))] text-[hsl(var(--mode-scope))]'
-                    : 'bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))]'
-              )}
-            >
-              {roleLabel(user.role)}
-            </span>
-            <span className="text-xs text-[hsl(var(--vault-muted))] truncate">
-              {activeBankLabel}
-            </span>
           </div>
         </div>
       </aside>
@@ -380,35 +445,33 @@ export function AppShell({ user, teams }: AppShellProps) {
           ) : null}
 
           <div
-            className="flex gap-1 px-3 py-1 border-t border-border overflow-x-auto items-center"
+            className={cn(
+              'flex gap-1 px-3 py-1 border-t border-border overflow-x-auto items-center',
+              selectedDocumentId && activeView === 'sources' && 'py-0.5'
+            )}
             role="tablist"
             aria-label="Workspace views"
           >
-            {WORK_VIEWS.map((view) => (
-              <button
-                key={view.id}
-                type="button"
-                role="tab"
-                aria-selected={activeView === view.id}
-                onClick={() => goToView(view.id)}
-                className={cn(
-                  'px-2.5 py-1.5 text-xs font-medium border-b-2 transition-colors whitespace-nowrap min-h-[36px]',
-                  activeView === view.id
-                    ? 'border-[hsl(var(--mode-scope))] text-foreground'
-                    : 'border-transparent text-[hsl(var(--vault-muted))] hover:text-foreground/80'
-                )}
-              >
-                {view.label}
-              </button>
-            ))}
-
-            {isConsultant ? (
-              <>
-                <span className="w-px h-4 bg-border mx-1 shrink-0 self-center" aria-hidden />
-                <span className="text-xs font-medium uppercase tracking-widest text-[hsl(var(--mode-ops))] px-1 shrink-0 self-center">
-                  Ops
+            {selectedDocumentId && activeView === 'sources' ? (
+              /* Compact mode: show only active tab with a back-to-tabs affordance */
+              <div className="flex items-center gap-2 w-full">
+                <button
+                  type="button"
+                  onClick={() => setSelectedDocumentId(null)}
+                  className="text-[hsl(var(--vault-muted))] hover:text-foreground transition-colors shrink-0"
+                  aria-label="Back to tab list"
+                >
+                  <svg viewBox="0 0 16 16" className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                    <path d="M10 3.5 5.5 8l4.5 4.5" />
+                  </svg>
+                </button>
+                <span className="text-xs font-medium text-foreground truncate min-h-[32px] flex items-center">
+                  {WORK_VIEWS.find((v) => v.id === activeView)?.label ?? activeView}
                 </span>
-                {OPS_VIEWS.map((view) => (
+              </div>
+            ) : (
+              <>
+                {WORK_VIEWS.map((view) => (
                   <button
                     key={view.id}
                     type="button"
@@ -418,15 +481,41 @@ export function AppShell({ user, teams }: AppShellProps) {
                     className={cn(
                       'px-2.5 py-1.5 text-xs font-medium border-b-2 transition-colors whitespace-nowrap min-h-[36px]',
                       activeView === view.id
-                        ? 'border-[hsl(var(--mode-ops))] text-foreground'
-                        : 'border-transparent text-[hsl(var(--vault-muted))] hover:text-[hsl(var(--mode-ops))]/80'
+                        ? 'border-[hsl(var(--mode-scope))] text-foreground'
+                        : 'border-transparent text-[hsl(var(--vault-muted))] hover:text-foreground/80'
                     )}
                   >
                     {view.label}
                   </button>
                 ))}
+
+                {isConsultant ? (
+                  <>
+                    <span className="w-px h-4 bg-border mx-1 shrink-0 self-center" aria-hidden />
+                    <span className="text-xs font-medium uppercase tracking-widest text-[hsl(var(--mode-ops))] px-1 shrink-0 self-center">
+                      Ops
+                    </span>
+                    {OPS_VIEWS.map((view) => (
+                      <button
+                        key={view.id}
+                        type="button"
+                        role="tab"
+                        aria-selected={activeView === view.id}
+                        onClick={() => goToView(view.id)}
+                        className={cn(
+                          'px-2.5 py-1.5 text-xs font-medium border-b-2 transition-colors whitespace-nowrap min-h-[36px]',
+                          activeView === view.id
+                            ? 'border-[hsl(var(--mode-ops))] text-foreground'
+                            : 'border-transparent text-[hsl(var(--vault-muted))] hover:text-[hsl(var(--mode-ops))]/80'
+                        )}
+                      >
+                        {view.label}
+                      </button>
+                    ))}
+                  </>
+                ) : null}
               </>
-            ) : null}
+            )}
           </div>
         </header>
 

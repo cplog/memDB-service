@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { ChevronIcon } from './hindsight-icons'
+import { Button } from '@/components/ui/button'
+import { ChevronIcon, DocIcon, TeamIcon } from './hindsight-icons'
 import { documentTreeLabels } from '@/lib/document-display'
 
 interface TreeNode {
@@ -15,6 +16,9 @@ interface TreeNode {
   documentId?: string
   documentSubtitle?: string
   count?: number
+  updatedAt?: string
+  tags?: string[]
+  factCount?: number
 }
 
 interface FileTreeProps {
@@ -22,8 +26,10 @@ interface FileTreeProps {
   activeBank: string
   activeDocumentId?: string | null
   refreshToken?: number
+  searchQuery?: string
   onSelectBank: (bankId: string) => void
   onSelectDocument?: (bankId: string, documentId: string) => void
+  onDeleteDocument?: (bankId: string, documentId: string) => void
   userRole: string
 }
 
@@ -41,15 +47,16 @@ export function FileTree({
   activeBank,
   activeDocumentId,
   refreshToken = 0,
+  searchQuery = '',
   onSelectBank,
   onSelectDocument,
+  onDeleteDocument,
   userRole,
 }: FileTreeProps) {
   const wideAccess = userRole === 'consultant' || userRole === 'manager'
-  const [expanded, setExpanded] = useState<Set<string>>(new Set())
-  const [vaultOpen, setVaultOpen] = useState(true)
   const [docCache, setDocCache] = useState<Record<string, TreeNode[]>>({})
   const [loadingBanks, setLoadingBanks] = useState<Set<string>>(new Set())
+  const [deletingDocId, setDeletingDocId] = useState<string | null>(null)
   const inflightRef = useRef<Set<string>>(new Set())
   const docCacheRef = useRef(docCache)
   docCacheRef.current = docCache
@@ -76,6 +83,9 @@ export function FileTree({
             type: 'document' as const,
             bankId,
             documentId: id,
+            updatedAt: String(row.updated_at ?? ''),
+            tags: Array.isArray(row.tags) ? row.tags as string[] : [],
+            factCount: Number(row.memory_unit_count ?? 0),
           }
         })
         .filter((n: TreeNode) => n.documentId)
@@ -90,33 +100,20 @@ export function FileTree({
     }
   }, [])
 
-  const ensureExpanded = useCallback((ids: string[]) => {
-    setExpanded((prev) => new Set([...Array.from(prev), ...ids]))
-  }, [])
-
-  const toggleExpanded = useCallback((id: string) => {
-    setExpanded((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
-  }, [])
-
+  // Load all docs for wide-access users on mount
   useEffect(() => {
-    if (!nodes[0]?.id) return
-    ensureExpanded([nodes[0].id, ...bankIds])
     if (wideAccess) {
       for (const bankId of bankIds) void loadDocuments(bankId)
     }
-  }, [nodes, bankIds, wideAccess, ensureExpanded, loadDocuments])
+  }, [bankIds, wideAccess, loadDocuments])
 
+  // Load docs for single-bank users when bank changes
   useEffect(() => {
-    if (!nodes[0]?.id || wideAccess) return
-    ensureExpanded([nodes[0].id, activeBank])
+    if (wideAccess) return
     void loadDocuments(activeBank)
-  }, [activeBank, nodes, wideAccess, ensureExpanded, loadDocuments])
+  }, [activeBank, wideAccess, loadDocuments])
 
+  // Refresh on token change
   useEffect(() => {
     if (refreshToken <= 0) return
     setDocCache((prev) => {
@@ -127,142 +124,205 @@ export function FileTree({
     void loadDocuments(activeBank, true)
   }, [refreshToken, activeBank, loadDocuments])
 
-  const renderNode = (node: TreeNode, depth = 0) => {
-    const isExpanded = expanded.has(node.id)
-    const isActiveBank = node.bankId === activeBank && node.type === 'bank'
-    const isActiveDoc =
-      node.type === 'document' &&
-      node.documentId === activeDocumentId &&
-      node.bankId === activeBank
-    const isActive = isActiveBank || isActiveDoc
-    const isBank = node.type === 'bank'
-    const isDocument = node.type === 'document'
-    const isCompany = node.type === 'company'
-    const hasExpandable = isCompany || isBank
-    const docs = isBank && node.bankId ? docCache[node.bankId] ?? [] : []
-    const docsLoaded = isBank && node.bankId ? docCache[node.bankId] !== undefined : false
-    const isLoadingDocs = isBank && node.bankId ? loadingBanks.has(node.bankId) : false
+  // Filter docs based on search query
+  const filteredDocs = useMemo(() => {
+    if (!searchQuery.trim()) return docCache
+    const q = searchQuery.toLowerCase()
+    const result: Record<string, TreeNode[]> = {}
+    for (const [bankId, docs] of Object.entries(docCache)) {
+      result[bankId] = docs.filter((doc) => {
+        const matchesName = doc.name.toLowerCase().includes(q)
+        const matchesTags = doc.tags?.some((t) => t.toLowerCase().includes(q))
+        const matchesSubtitle = doc.documentSubtitle?.toLowerCase().includes(q)
+        return matchesName || matchesTags || matchesSubtitle
+      })
+    }
+    return result
+  }, [docCache, searchQuery])
 
-    const showSubtitle =
-      isDocument &&
-      node.documentSubtitle &&
-      node.documentSubtitle !== node.name &&
-      !node.documentSubtitle.startsWith(node.name)
-
-    return (
-      <div key={node.id} className="min-w-0 max-w-full">
-        <button
-          type="button"
-          className={cn(
-            'w-full max-w-full min-w-0 flex items-start gap-1.5 py-1 pr-2 rounded-md text-left overflow-hidden group transition-colors',
-            isActive
-              ? 'text-[hsl(var(--vault-active))] bg-[hsl(var(--accent))]/10'
-              : 'text-[hsl(var(--vault-muted))] hover:text-foreground hover:bg-[hsl(var(--secondary))]'
-          )}
-          style={{ paddingLeft: `${depth * 12 + 8}px` }}
-          onClick={(event) => {
-            const toggleTarget = (event.target as HTMLElement).closest('[data-tree-toggle]')
-            if (toggleTarget && hasExpandable) {
-              toggleExpanded(node.id)
-              if (isBank && node.bankId) void loadDocuments(node.bankId)
-              return
-            }
-            if (node.type === 'document' && node.bankId && node.documentId) {
-              onSelectDocument?.(node.bankId, node.documentId)
-              return
-            }
-            if (isBank && node.bankId) {
-              ensureExpanded([nodes[0]?.id ?? '', node.id])
-              void loadDocuments(node.bankId)
-              onSelectBank(node.bankId)
-              return
-            }
-            if (hasExpandable) {
-              toggleExpanded(node.id)
-            }
-          }}
-        >
-          {hasExpandable ? (
-            <span
-              data-tree-toggle
-              className="min-h-[28px] w-4 shrink-0 inline-flex items-center justify-center"
-              aria-label={isExpanded ? `Collapse ${node.name}` : `Expand ${node.name}`}
-            >
-              <ChevronIcon
-                className={cn('w-3 h-3 opacity-60 transition-transform', isExpanded && 'opacity-90')}
-                open={isExpanded}
-              />
-            </span>
-          ) : (
-            <span className="w-3 shrink-0" aria-hidden />
-          )}
-          <span className="min-w-0 flex-1 overflow-hidden">
-            <span
-              className={cn(
-                'block text-sm leading-snug truncate',
-                isActive && 'font-medium',
-                isBank && !isActive && 'text-foreground/80 font-medium'
-              )}
-              title={node.name}
-            >
-              {node.name}
-            </span>
-            {showSubtitle ? (
-              <span
-                className="block truncate text-[10px] leading-tight opacity-60 mt-0.5"
-                title={node.documentSubtitle}
-              >
-                {node.documentSubtitle}
-              </span>
-            ) : null}
-          </span>
-          {isBank && docsLoaded ? (
-            <span className="shrink-0 text-xs tabular-nums opacity-50 group-hover:opacity-70">
-              {docs.length}
-            </span>
-          ) : isLoadingDocs ? (
-            <span className="text-xs opacity-40">…</span>
-          ) : null}
-        </button>
-
-        {isExpanded && isBank && node.bankId ? (
-          <div className="mt-0.5">
-            {docsLoaded && !docs.length && !isLoadingDocs ? (
-              <p
-                className="text-xs text-[hsl(var(--vault-muted))] py-1 opacity-60"
-                style={{ paddingLeft: `${(depth + 1) * 16 + 28}px` }}
-              >
-                empty
-              </p>
-            ) : null}
-            {docs.map((child) => renderNode(child, depth + 1))}
-          </div>
-        ) : null}
-
-        {isExpanded && isCompany && node.children?.length ? (
-          <div>{node.children.map((child) => renderNode(child, depth + 1))}</div>
-        ) : null}
-      </div>
-    )
+  // Format relative date
+  const formatRelativeDate = (dateStr: string) => {
+    if (!dateStr) return null
+    try {
+      const date = new Date(dateStr)
+      const now = new Date()
+      const diffMs = now.getTime() - date.getTime()
+      const diffMins = Math.floor(diffMs / 60000)
+      const diffHours = Math.floor(diffMs / 3600000)
+      const diffDays = Math.floor(diffMs / 86400000)
+      if (diffMins < 1) return 'just now'
+      if (diffMins < 60) return `${diffMins}m ago`
+      if (diffHours < 24) return `${diffHours}h ago`
+      if (diffDays < 7) return `${diffDays}d ago`
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    } catch {
+      return null
+    }
   }
+
+  const banks = useMemo(() => {
+    const result: { bank: TreeNode; docs: TreeNode[] }[] = []
+    for (const node of nodes) {
+      if (node.children) {
+        for (const child of node.children) {
+          if (child.type === 'bank' && child.bankId) {
+            result.push({
+              bank: child,
+              docs: filteredDocs[child.bankId] ?? [],
+            })
+          }
+        }
+      }
+    }
+    return result
+  }, [nodes, filteredDocs])
 
   return (
     <ScrollArea className="h-full min-w-0">
-      <div className="min-w-0 max-w-full py-3 px-1.5">
-        <button
-          type="button"
-          className="w-full flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-[hsl(var(--vault-muted))] px-3 mb-2 opacity-70 hover:opacity-100"
-          onClick={() => setVaultOpen((open) => !open)}
-          aria-expanded={vaultOpen}
-        >
-          <ChevronIcon className="w-3 h-3" open={vaultOpen} />
-          Vault
-        </button>
-        {vaultOpen ? (
-          <div className="space-y-0.5">
-            {nodes.map((node) => renderNode(node))}
-          </div>
-        ) : null}
+      <div className="min-w-0 max-w-full py-2 px-2">
+        {banks.length === 0 && searchQuery.trim() ? (
+          <p className="px-2.5 py-4 text-[11px] text-[hsl(var(--vault-muted))] opacity-50 text-center">
+            No matches for &ldquo;{searchQuery}&rdquo;
+          </p>
+        ) : (
+          banks.map(({ bank, docs }) => {
+            const isActiveBank = bank.bankId === activeBank
+            const isLoading = bank.bankId ? loadingBanks.has(bank.bankId) : false
+
+            return (
+              <div key={bank.id} className="mb-1">
+                {/* Bank header */}
+                <button
+                  type="button"
+                  className={cn(
+                    'w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-left transition-colors group',
+                    isActiveBank
+                      ? 'text-[hsl(var(--vault-active))]'
+                      : 'text-[hsl(var(--vault-muted))] hover:text-foreground hover:bg-[hsl(var(--secondary))]'
+                  )}
+                  onClick={() => {
+                    onSelectBank(bank.bankId!)
+                  }}
+                >
+                  <TeamIcon className="w-4 h-4 opacity-70 group-hover:opacity-100" />
+                  <span className="text-[13px] font-medium truncate flex-1">{bank.name}</span>
+                  {isLoading ? (
+                    <span className="text-[11px] opacity-40">…</span>
+                  ) : docs.length > 0 ? (
+                    <span className="text-[11px] tabular-nums opacity-40 group-hover:opacity-60">
+                      {docs.length}
+                    </span>
+                  ) : null}
+                </button>
+
+                {/* Documents */}
+                <div className="ml-2 mt-0.5 space-y-px">
+                  {docs.length === 0 && !isLoading ? (
+                    <p className="px-2.5 py-1.5 text-[11px] text-[hsl(var(--vault-muted))] opacity-50">
+                      No documents
+                    </p>
+                  ) : (
+                    docs.map((doc) => {
+                      const isActive =
+                        doc.documentId === activeDocumentId && doc.bankId === activeBank
+                      const showSubtitle =
+                        doc.documentSubtitle &&
+                        doc.documentSubtitle !== doc.name &&
+                        !doc.documentSubtitle.startsWith(doc.name)
+                      const isDeleting = deletingDocId === doc.id
+
+                      return (
+                        <div key={doc.id} className="relative group">
+                          <button
+                            type="button"
+                            className={cn(
+                              'w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-left transition-colors',
+                              isActive
+                                ? 'bg-[hsl(var(--accent))]/10 text-[hsl(var(--vault-active))] font-medium'
+                                : 'text-[hsl(var(--vault-muted))] hover:text-foreground hover:bg-[hsl(var(--secondary))]'
+                            )}
+                            onClick={() => onSelectDocument?.(doc.bankId!, doc.documentId!)}
+                          >
+                            <DocIcon className={cn('w-3.5 h-3.5', isActive ? 'opacity-80' : 'opacity-50 group-hover:opacity-70')} />
+                            <span className="min-w-0 flex-1">
+                              <span className="block text-[13px] leading-snug truncate">
+                                {doc.name}
+                              </span>
+                              <span className="flex items-center gap-1.5 mt-px">
+                                {showSubtitle ? (
+                                  <span className="block text-[11px] leading-tight opacity-50 truncate">
+                                    {doc.documentSubtitle}
+                                  </span>
+                                ) : null}
+                                {doc.factCount != null && doc.factCount > 0 ? (
+                                  <span className="text-[10px] text-[hsl(var(--vault-muted))] tabular-nums shrink-0">
+                                    {doc.factCount} facts
+                                  </span>
+                                ) : null}
+                                {doc.updatedAt ? (
+                                  <span className="text-[10px] text-[hsl(var(--vault-muted))] tabular-nums shrink-0" title={doc.updatedAt}>
+                                    {formatRelativeDate(doc.updatedAt)}
+                                  </span>
+                                ) : null}
+                              </span>
+                            </span>
+                          </button>
+                          {/* Delete button on hover */}
+                          {onDeleteDocument && doc.bankId && doc.documentId ? (
+                            <div className="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                              {isDeleting ? (
+                                <div className="flex items-center gap-1 bg-[hsl(var(--card))] border border-[hsl(var(--error-border))] rounded px-1.5 py-0.5">
+                                  <span className="text-[10px] text-[hsl(var(--error-fg))]">Delete?</span>
+                                  <button
+                                    type="button"
+                                    className="text-[10px] text-[hsl(var(--error-fg))] font-medium hover:underline"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      onDeleteDocument(doc.bankId!, doc.documentId!)
+                                      setDeletingDocId(null)
+                                    }}
+                                  >
+                                    Yes
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="text-[10px] text-[hsl(var(--vault-muted))] hover:underline"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setDeletingDocId(null)
+                                    }}
+                                  >
+                                    No
+                                  </button>
+                                </div>
+                              ) : (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="w-6 h-6 text-[hsl(var(--vault-muted))] hover:text-[hsl(var(--error-fg))] hover:bg-[hsl(var(--error-bg))]"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    setDeletingDocId(doc.id)
+                                  }}
+                                  aria-label={`Delete ${doc.name}`}
+                                >
+                                  <svg viewBox="0 0 16 16" className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                                    <path d="M4 4l8 8M12 4l-8 8" />
+                                  </svg>
+                                </Button>
+                              )}
+                            </div>
+                          ) : null}
+                        </div>
+                      )
+                    })
+                  )}
+                </div>
+              </div>
+            )
+          })
+        )}
       </div>
     </ScrollArea>
   )

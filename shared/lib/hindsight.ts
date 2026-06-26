@@ -411,8 +411,13 @@ export async function getEntityForBank(bankId: string, entityId: string) {
     client: getSdk(),
     path: { bank_id: bankId, entity_id: entityId },
   })
-  if (error) throw new Error(String(error))
-  return data
+  if (error) {
+    const msg = String(error)
+    // ponytail: SDK not-found shapes vary — treat as missing entity, not 500
+    if (/404|not found|unknown entity/i.test(msg)) return null
+    throw new Error(msg)
+  }
+  return data ?? null
 }
 
 export async function getDocumentForBank(bankId: string, documentId: string) {
