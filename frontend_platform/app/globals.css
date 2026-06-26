@@ -160,3 +160,57 @@
   background: hsl(var(--secondary));
   font-weight: 500;
 }
+
+.source-reader .wmde-markdown-var {
+  font-size: 0.9375rem;
+  line-height: 1.65;
+}
+
+.source-reader .wmde-markdown {
+  color: hsl(var(--foreground));
+}
+
+.source-reader .wmde-markdown p,
+.source-reader .wmde-markdown li {
+  line-height: 1.65;
+}
+
+.source-reader .wmde-markdown h1,
+.source-reader .wmde-markdown h2,
+.source-reader .wmde-markdown h3 {
+  color: hsl(var(--foreground));
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.source-reader .wmde-markdown h1 {
+  font-size: 1.75rem;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+}
+
+.source-reader .wmde-markdown h2 {
+  font-size: 1.35rem;
+  margin-top: 1.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.source-reader .wmde-markdown h3 {
+  font-size: 1.125rem;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.source-reader .wmde-markdown table {
+  width: max-content;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.source-reader .wmde-markdown th,
+.source-reader .wmde-markdown td {
+  border: 1px solid hsl(var(--border));
+  padding: 0.5rem 0.75rem;
+}

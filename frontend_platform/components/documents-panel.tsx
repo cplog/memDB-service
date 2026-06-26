@@ -357,8 +357,8 @@ export function DocumentsPanel({
         </div>
       ) : null}
 
-      <div className="flex-1 min-h-0 overflow-hidden">
-        <article className="flex flex-col min-h-0 bg-[hsl(var(--canvas))] h-full">
+      <div className="flex-1 min-h-0 overflow-auto">
+        <article className="min-h-full bg-[hsl(var(--canvas))]">
           {error && activeId && !loadingDetail ? (
             <div className="p-6">
               <p className="text-sm text-[hsl(var(--error-fg))]">{error}</p>
@@ -392,14 +392,15 @@ export function DocumentsPanel({
             </div>
           ) : detail ? (
             <>
-              <div className="px-6 py-5 border-b">
-                <div className="flex flex-wrap items-start gap-4">
+              <div className="sticky top-0 z-10 bg-[hsl(var(--canvas))]/95 backdrop-blur border-b">
+                <div className="px-4 py-3 sm:px-6 lg:px-8">
+                <div className="flex flex-wrap items-start gap-3">
                   <div className="min-w-0 flex-1">
-                    <h2 className="text-2xl font-semibold tracking-tight break-all text-foreground">
+                    <h2 className="text-xl font-semibold tracking-tight break-words text-foreground">
                       {documentDisplayName(detail.id, detail.document_metadata)}
                     </h2>
                     {documentDisplayName(detail.id, detail.document_metadata) !== detail.id ? (
-                      <p className="text-sm text-[hsl(var(--vault-muted))] mt-2 break-all font-mono opacity-70">{detail.id}</p>
+                      <p className="text-xs text-[hsl(var(--vault-muted))] mt-1 break-all font-mono opacity-70">{detail.id}</p>
                     ) : null}
                   </div>
                   <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
@@ -453,7 +454,7 @@ export function DocumentsPanel({
                     )}
                   </div>
                 </div>
-                <div className="flex flex-wrap items-center gap-3 mt-5">
+                <div className="flex flex-wrap items-center gap-2.5 mt-3">
                   <Badge variant="secondary" className="text-xs font-medium px-2.5 py-0.5">
                     {detail.memory_unit_count} facts
                   </Badge>
@@ -471,11 +472,11 @@ export function DocumentsPanel({
                       </Badge>
                     ))}
                   {detail.nodes_by_fact_type?.observation ? (
-                    <span className="text-sm text-[hsl(var(--vault-muted))] w-full sm:w-auto mt-2 sm:mt-0">
+                    <span className="text-xs text-[hsl(var(--vault-muted))] w-full lg:w-auto">
                       Observations are consolidated beliefs linked to this source — not extra uploads.
                     </span>
                   ) : null}
-                  <span className="text-sm text-[hsl(var(--vault-muted))] ml-auto">
+                  <span className="text-xs text-[hsl(var(--vault-muted))] lg:ml-auto">
                     Updated {formatDate(detail.updated_at)}
                   </span>
                   {saveSuccess ? (
@@ -505,22 +506,19 @@ export function DocumentsPanel({
                   ) : null}
                 </div>
                 {(detail.tags?.length || userRole === 'consultant') ? (
-                  <div className="mt-5 pt-4 border-t border-border space-y-3">
-                    <p className="text-xs font-medium uppercase tracking-widest text-[hsl(var(--vault-muted))]">
-                      Tags
-                    </p>
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
                     {userRole === 'consultant' ? (
-                      <div className="flex gap-3">
+                      <div className="flex w-full max-w-xl gap-2">
                         <input
                           value={tagDraft}
                           onChange={(e) => setTagDraft(e.target.value)}
                           placeholder="scope:shared, project:alpha"
-                          className="flex-1 rounded-md border border-border bg-[hsl(var(--canvas))] px-3 py-2 text-sm"
+                          className="min-h-[36px] flex-1 rounded-md border border-border bg-[hsl(var(--canvas))] px-3 py-1.5 text-sm"
                         />
                         <Button
                           size="sm"
                           variant="secondary"
-                          className="text-sm"
+                          className="text-sm shrink-0"
                           disabled={savingTags}
                           onClick={() => void handleSaveTags()}
                         >
@@ -536,16 +534,12 @@ export function DocumentsPanel({
                         ))}
                       </div>
                     )}
-                    {userRole === 'consultant' ? (
-                      <p className="text-xs text-[hsl(var(--vault-muted))] opacity-80">
-                        Tag updates re-consolidate observations for this source.
-                      </p>
-                    ) : null}
                   </div>
                 ) : null}
+                </div>
               </div>
-              <div className="flex-1 min-h-0 overflow-auto">
-                <div className="flex min-h-full flex-col p-6 lg:p-10 max-w-[85ch] mx-auto w-full">
+              <div className="px-4 py-6 sm:px-6 lg:px-8">
+                <div className="source-reader mx-auto w-full max-w-[78ch]">
                 {editing ? (
                   <>
                     <p className="text-sm text-[hsl(var(--vault-muted))] mb-4 leading-relaxed">
@@ -554,11 +548,11 @@ export function DocumentsPanel({
                     <Textarea
                       value={draft}
                       onChange={(e) => setDraft(e.target.value)}
-                      className="flex-1 min-h-[400px] text-sm leading-relaxed resize-y p-4"
+                      className="min-h-[60vh] text-base leading-relaxed resize-y p-4"
                     />
                   </>
                 ) : (
-                  <div className="prose prose-sm md:prose-base prose-slate dark:prose-invert max-w-none">
+                  <div className="prose prose-slate max-w-none">
                     <MarkdownPreview source={detail.original_text ?? ''} />
                   </div>
                 )}
