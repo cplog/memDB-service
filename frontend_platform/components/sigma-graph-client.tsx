@@ -14,6 +14,22 @@ const NODE_COLORS: Record<string, string> = {
   index: WIKI_GRAPH_COLORS.index,
 }
 
+const DIMMED_NODE_COLORS: Record<string, string> = {
+  source: 'rgba(249, 115, 22, 0.5)',
+  entity: 'rgba(59, 130, 246, 0.5)',
+  index: 'rgba(16, 185, 129, 0.5)',
+}
+
+const UNFOCUSED_NODE_COLORS: Record<string, string> = {
+  source: 'rgba(249, 115, 22, 0.35)',
+  entity: 'rgba(59, 130, 246, 0.35)',
+  index: 'rgba(16, 185, 129, 0.35)',
+}
+
+const EDGE_COLOR = 'rgba(100, 116, 139, 0.5)'
+const EDGE_DIMMED_COLOR = 'rgba(100, 116, 139, 0.22)'
+const EDGE_ACTIVE_COLOR = 'rgba(16, 185, 129, 0.85)'
+
 interface SigmaGraphInnerProps {
   nodes: WikiGraphNode[]
   links: { source: string; target: string }[]
@@ -63,13 +79,13 @@ function SigmaGraphInner({
       const isHovered = node.id === hoverId
 
       let color = baseColor
-      let size = Math.sqrt(node.val ?? 4) * 2.4
+      let size = Math.max(4, Math.sqrt(node.val ?? 4) * 2.4)
 
       if (isDimmed) {
-        color = baseColor + '20'
+        color = DIMMED_NODE_COLORS[node.type] || 'rgba(100, 116, 139, 0.5)'
         size = size * 0.6
       } else if (!isNeighbor && activeId) {
-        color = baseColor + '30'
+        color = UNFOCUSED_NODE_COLORS[node.type] || 'rgba(100, 116, 139, 0.35)'
         size = size * 0.7
       }
 
@@ -105,8 +121,8 @@ function SigmaGraphInner({
       const isDimmed = activeId && !isActive
 
       graph.addEdge(s, t, {
-        size: isActive ? 2 : 0.8,
-        color: isActive ? 'rgba(16, 185, 129, 0.7)' : isDimmed ? 'rgba(148, 163, 184, 0.12)' : 'rgba(148, 163, 184, 0.4)',
+        size: isActive ? 2 : 1,
+        color: isActive ? EDGE_ACTIVE_COLOR : isDimmed ? EDGE_DIMMED_COLOR : EDGE_COLOR,
       })
     }
 
@@ -151,13 +167,13 @@ function SigmaGraphInner({
       const isHovered = nodeId === hoverId
 
       let color = baseColor
-      let size = Math.sqrt(node.val ?? 4) * 2.4
+      let size = Math.max(4, Math.sqrt(node.val ?? 4) * 2.4)
 
       if (isDimmed) {
-        color = baseColor + '20'
+        color = DIMMED_NODE_COLORS[node.type] || 'rgba(100, 116, 139, 0.5)'
         size = size * 0.6
       } else if (!isNeighbor && activeId) {
-        color = baseColor + '30'
+        color = UNFOCUSED_NODE_COLORS[node.type] || 'rgba(100, 116, 139, 0.35)'
         size = size * 0.7
       }
 
@@ -175,12 +191,12 @@ function SigmaGraphInner({
       const isActive = focusId === source || focusId === target || hoverId === source || hoverId === target
       const isDimmed = activeId && !isActive
 
-      graph.setEdgeAttribute(edgeId, 'size', isActive ? 2 : 0.8)
+      graph.setEdgeAttribute(edgeId, 'size', isActive ? 2 : 1)
       graph.setEdgeAttribute(edgeId, 'color', isActive
-        ? 'rgba(16, 185, 129, 0.7)'
+        ? EDGE_ACTIVE_COLOR
         : isDimmed
-          ? 'rgba(148, 163, 184, 0.12)'
-          : 'rgba(148, 163, 184, 0.4)'
+          ? EDGE_DIMMED_COLOR
+          : EDGE_COLOR
       )
     })
 
@@ -250,11 +266,11 @@ export function SigmaGraphClient(props: SigmaGraphClientProps) {
     <SigmaContainer
       style={{ width: '100%', height: '100%' }}
       settings={{
-        defaultNodeColor: '#999',
-        defaultEdgeColor: 'rgba(148, 163, 184, 0.4)',
+        defaultNodeColor: '#64748b',
+        defaultEdgeColor: EDGE_COLOR,
         labelFont: 'system-ui, -apple-system, sans-serif',
         labelSize: 11,
-        labelColor: { color: '#666' },
+        labelColor: { color: '#334155' },
         zIndex: true,
         labelDensity: 0.5,
         labelGridCellSize: 60,

@@ -47,6 +47,7 @@ export function FileTree({
 }: FileTreeProps) {
   const wideAccess = userRole === 'consultant' || userRole === 'manager'
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
+  const [vaultOpen, setVaultOpen] = useState(true)
   const [docCache, setDocCache] = useState<Record<string, TreeNode[]>>({})
   const [loadingBanks, setLoadingBanks] = useState<Set<string>>(new Set())
   const inflightRef = useRef<Set<string>>(new Set())
@@ -91,6 +92,15 @@ export function FileTree({
 
   const ensureExpanded = useCallback((ids: string[]) => {
     setExpanded((prev) => new Set([...Array.from(prev), ...ids]))
+  }, [])
+
+  const toggleExpanded = useCallback((id: string) => {
+    setExpanded((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
   }, [])
 
   useEffect(() => {
@@ -144,7 +154,13 @@ export function FileTree({
               : 'text-[hsl(var(--vault-muted))] hover:text-foreground hover:bg-[hsl(var(--secondary))]'
           )}
           style={{ paddingLeft: `${depth * 16 + 12}px` }}
-          onClick={() => {
+          onClick={(event) => {
+            const toggleTarget = (event.target as HTMLElement).closest('[data-tree-toggle]')
+            if (toggleTarget && hasExpandable) {
+              toggleExpanded(node.id)
+              if (isBank && node.bankId) void loadDocuments(node.bankId)
+              return
+            }
             if (node.type === 'document' && node.bankId && node.documentId) {
               onSelectDocument?.(node.bankId, node.documentId)
               return
@@ -156,20 +172,21 @@ export function FileTree({
               return
             }
             if (hasExpandable) {
-              setExpanded((prev) => {
-                const next = new Set(prev)
-                if (next.has(node.id)) next.delete(node.id)
-                else next.add(node.id)
-                return next
-              })
+              toggleExpanded(node.id)
             }
           }}
         >
           {hasExpandable ? (
-            <ChevronIcon
-              className={cn('w-3 h-3 opacity-60 transition-transform', isExpanded && 'opacity-90')}
-              open={isExpanded}
-            />
+            <span
+              data-tree-toggle
+              className="min-h-[28px] w-4 shrink-0 inline-flex items-center justify-center"
+              aria-label={isExpanded ? `Collapse ${node.name}` : `Expand ${node.name}`}
+            >
+              <ChevronIcon
+                className={cn('w-3 h-3 opacity-60 transition-transform', isExpanded && 'opacity-90')}
+                open={isExpanded}
+              />
+            </span>
           ) : (
             <span className="w-3 shrink-0" aria-hidden />
           )}
@@ -224,12 +241,20 @@ export function FileTree({
   return (
     <ScrollArea className="h-full">
       <div className="py-3 px-2">
-        <p className="text-xs font-semibold uppercase tracking-widest text-[hsl(var(--vault-muted))] px-3 mb-2 opacity-70">
+        <button
+          type="button"
+          className="w-full flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-[hsl(var(--vault-muted))] px-3 mb-2 opacity-70 hover:opacity-100"
+          onClick={() => setVaultOpen((open) => !open)}
+          aria-expanded={vaultOpen}
+        >
+          <ChevronIcon className="w-3 h-3" open={vaultOpen} />
           Vault
-        </p>
-        <div className="space-y-0.5">
-          {nodes.map((node) => renderNode(node))}
-        </div>
+        </button>
+        {vaultOpen ? (
+          <div className="space-y-0.5">
+            {nodes.map((node) => renderNode(node))}
+          </div>
+        ) : null}
       </div>
     </ScrollArea>
   )
