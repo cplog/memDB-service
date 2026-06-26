@@ -11,7 +11,7 @@ COPY shared ./shared
 
 # Build the Next.js app
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN cd frontend_platform && npm run build
+RUN mkdir -p frontend_platform/public && cd frontend_platform && npm run build
 
 # Production image
 FROM node:20-alpine AS runner
