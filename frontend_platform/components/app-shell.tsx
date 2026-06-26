@@ -220,10 +220,10 @@ export function AppShell({ user, teams }: AppShellProps) {
       <aside className="flex flex-col border-r border-[hsl(var(--vault-border))] bg-[hsl(var(--vault))] overflow-hidden">
         <div className="px-3 py-2.5 border-b border-[hsl(var(--vault-border))]">
           <div className="flex items-center gap-2">
-            <MarkIcon className="w-4 h-4 text-[hsl(var(--vault-active))]" title="Hindsight" />
+            <MarkIcon className="w-4 h-4 text-[hsl(var(--vault-active))]" title="Crewio.ai" />
             <div className="min-w-0">
               <span className="text-[13px] font-medium tracking-tight text-[hsl(var(--foreground))] block truncate">
-                Hindsight
+                Crewio.ai
               </span>
               <span className="text-[10px] text-[hsl(var(--vault-muted))] block truncate">
                 {modeMeta.title}

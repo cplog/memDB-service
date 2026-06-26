@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Hindsight Portal',
-  description: 'Knowledge management powered by Hindsight',
+  title: 'Crewio.ai Portal',
+  description: 'Knowledge management powered by Crewio.ai',
 }
 
 export default function RootLayout({

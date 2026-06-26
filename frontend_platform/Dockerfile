@@ -1,5 +1,7 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
+ARG BACKEND_URL=http://localhost:8000
+ENV BACKEND_URL=$BACKEND_URL
 
 # Copy frontend package files into frontend_platform/
 COPY frontend_platform/package.json frontend_platform/package-lock.json* ./frontend_platform/

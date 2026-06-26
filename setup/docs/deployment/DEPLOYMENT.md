@@ -31,7 +31,7 @@ Deploy both backend and frontend as separate services in the same Railway projec
 ### Service 1: API Backend
 
 1. New service from repo; Dockerfile path `backend_platform/Dockerfile` (build context: repo root)
-2. Environment:
+2. Environment. `BACKEND_URL` must be available during the Docker build because Next.js bakes rewrites into the standalone server:
 
 ```
 HINDSIGHT_API_URL=https://knowledge.crewio.ai

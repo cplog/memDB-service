@@ -58,9 +58,9 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-[hsl(var(--vault))] px-4">
       <div className="w-full max-w-sm border border-border bg-[hsl(var(--card))] p-6">
         <div className="flex items-center gap-2.5 mb-6">
-          <MarkIcon className="size-5 text-[hsl(var(--vault-active))]" title="Hindsight" />
+          <MarkIcon className="size-5 text-[hsl(var(--vault-active))]" title="Crewio.ai" />
           <div>
-            <h1 className="text-[15px] font-medium tracking-tight">Hindsight Portal</h1>
+            <h1 className="text-[15px] font-medium tracking-tight">Crewio.ai Portal</h1>
             <p className="text-[11px] text-[hsl(var(--vault-muted))]">Sign in to your vault</p>
           </div>
         </div>
