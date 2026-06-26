@@ -40,9 +40,9 @@ export function ScenarioField({
           placeholder="megacorp-renewal or shared"
           className="min-h-[44px] text-[12px]"
         />
-        <p className="text-[11px] text-[hsl(var(--vault-muted))] leading-relaxed">
-          Tags content as <code className="text-[10px]">scenario:{'{id}'}</code>. Use{' '}
-          <code className="text-[10px]">shared</code> for docs visible across scenarios in this
+        <p className="text-xs text-[hsl(var(--vault-muted))] leading-relaxed">
+          Tags content as <code className="text-xs">scenario:{'{id}'}</code>. Use{' '}
+          <code className="text-xs">shared</code> for docs visible across scenarios in this
           team bank. Leave empty for team-wide scope.
         </p>
         {presets.length > 0 ? (
@@ -56,7 +56,7 @@ export function ScenarioField({
               >
                 <Badge
                   variant={value === preset ? 'default' : 'secondary'}
-                  className="text-[10px] cursor-pointer"
+                  className="text-xs cursor-pointer"
                 >
                   {preset}
                 </Badge>
@@ -73,7 +73,7 @@ export function ScenarioField({
             <button type="button" className="min-h-[44px] px-1" onClick={() => onRetainStrategyChange('')}>
               <Badge
                 variant={!retainStrategy ? 'default' : 'outline'}
-                className="text-[10px] cursor-pointer"
+                className="text-xs cursor-pointer"
               >
                 default
               </Badge>
@@ -87,7 +87,7 @@ export function ScenarioField({
               >
                 <Badge
                   variant={retainStrategy === name ? 'default' : 'outline'}
-                  className="text-[10px] cursor-pointer"
+                  className="text-xs cursor-pointer"
                 >
                   {name}
                 </Badge>

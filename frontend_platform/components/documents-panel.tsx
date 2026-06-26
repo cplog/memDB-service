@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -102,6 +102,21 @@ export function DocumentsPanel({
   const [tagDraft, setTagDraft] = useState('')
   const [savingTags, setSavingTags] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const factTypeBadges = useMemo(() => {
+    if (!detail?.nodes_by_fact_type) return null
+    return Object.entries(detail.nodes_by_fact_type).map(([k, v]) => (
+      <Badge
+        key={k}
+        variant="outline"
+        className={cn(
+          'text-xs capitalize font-medium px-2 py-0',
+          factTypeStyle(k).badge
+        )}
+      >
+        {factTypeStyle(k).label} {v}
+      </Badge>
+    ))
+  }, [detail?.nodes_by_fact_type])
   const replaceInputRef = useRef<HTMLInputElement>(null)
   const readerRef = useRef<HTMLDivElement>(null)
 
@@ -402,14 +417,14 @@ export function DocumentsPanel({
               <aside className="order-1 shrink-0 border-b border-border bg-[hsl(var(--vault))]/30 px-4 py-3 xl:order-2 xl:border-b-0 xl:border-l xl:overflow-y-auto xl:overscroll-contain">
                 <div className="source-meta-rail space-y-3">
                   <div>
-                    <p className="text-[10px] font-medium uppercase tracking-widest text-[hsl(var(--vault-muted))] mb-1">
+                    <p className="text-xs font-medium uppercase tracking-widest text-[hsl(var(--vault-muted))] mb-1">
                       Source
                     </p>
                     <h2 className="text-sm font-medium leading-snug break-words text-foreground">
                       {documentDisplayName(detail.id, detail.document_metadata)}
                     </h2>
                     {documentDisplayName(detail.id, detail.document_metadata) !== detail.id ? (
-                      <p className="text-[10px] text-[hsl(var(--vault-muted))] mt-1 break-all font-mono opacity-70">
+                      <p className="text-xs text-[hsl(var(--vault-muted))] mt-1 break-all font-mono opacity-70">
                         {detail.id}
                       </p>
                     ) : null}
@@ -467,29 +482,17 @@ export function DocumentsPanel({
                   </div>
 
                   <div className="flex flex-wrap gap-1.5">
-                    <Badge variant="secondary" className="text-[10px] font-medium px-2 py-0">
+                    <Badge variant="secondary" className="text-xs font-medium px-2 py-0">
                       {detail.memory_unit_count} facts
                     </Badge>
-                    {detail.nodes_by_fact_type &&
-                      Object.entries(detail.nodes_by_fact_type).map(([k, v]) => (
-                        <Badge
-                          key={k}
-                          variant="outline"
-                          className={cn(
-                            'text-[10px] capitalize font-medium px-2 py-0',
-                            factTypeStyle(k).badge
-                          )}
-                        >
-                          {factTypeStyle(k).label} {v}
-                        </Badge>
-                      ))}
+                    {factTypeBadges}
                   </div>
 
-                  <p className="text-[11px] text-[hsl(var(--vault-muted))]">
+                  <p className="text-xs text-[hsl(var(--vault-muted))]">
                     Updated {formatDate(detail.updated_at)}
                   </p>
                   {saveSuccess ? (
-                    <p className="text-[11px] font-medium text-[hsl(var(--success-fg))]">
+                    <p className="text-xs font-medium text-[hsl(var(--success-fg))]">
                       Saved — updating extracted knowledge
                     </p>
                   ) : null}
@@ -543,16 +546,18 @@ export function DocumentsPanel({
 
                   {(detail.tags?.length || userRole === 'consultant') ? (
                     <div className="space-y-2 pt-2 border-t border-border">
-                      <p className="text-[10px] font-medium uppercase tracking-widest text-[hsl(var(--vault-muted))]">
+                      <p className="text-xs font-medium uppercase tracking-widest text-[hsl(var(--vault-muted))]">
                         Tags
                       </p>
                       {userRole === 'consultant' ? (
                         <div className="flex flex-col gap-1.5">
                           <input
+                            id="doc-tags"
                             value={tagDraft}
                             onChange={(e) => setTagDraft(e.target.value)}
                             placeholder="scope:shared"
                             className="h-8 rounded-md border border-border bg-[hsl(var(--canvas))] px-2 text-xs"
+                            aria-label="Tags"
                           />
                           <Button
                             size="sm"
@@ -567,7 +572,7 @@ export function DocumentsPanel({
                       ) : (
                         <div className="flex flex-wrap gap-1">
                           {(detail.tags ?? []).map((t) => (
-                            <Badge key={t} variant="outline" className="text-[10px] font-normal px-2 py-0">
+                            <Badge key={t} variant="outline" className="text-xs font-normal px-2 py-0">
                               {t}
                             </Badge>
                           ))}

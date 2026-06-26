@@ -28,6 +28,77 @@ function pageMeta(
   return bundle.pages?.find((p) => p.path === path)
 }
 
+// ponytail: pre-process wiki lines into structured data so JSX generation is pure and cacheable
+// ceiling: O(n) scan on body change; upgrade path: virtualize for >1000 lines
+
+type WikiLine =
+  | { type: 'heading'; text: string }
+  | { type: 'markdown'; text: string }
+  | { type: 'entity'; label: string; path: string }
+  | { type: 'source'; label: string; path: string; facts?: string; updated?: string; tags?: string[] }
+  | { type: 'link-line'; parts: ({ kind: 'link'; label: string; path: string } | { kind: 'text'; text: string })[] }
+
+function processWikiLines(body: string): WikiLine[] {
+  const lines = body.split('\n')
+  const result: WikiLine[] = []
+  let section = ''
+
+  for (const line of lines) {
+    const heading = line.match(/^##\s+(.+)$/)
+    if (heading) {
+      section = heading[1].toLowerCase()
+      result.push({ type: 'heading', text: heading[1] })
+      continue
+    }
+
+    const parts = splitWikiLinkMarkdown(line)
+    const hasLink = parts.some((part) => part.kind === 'link')
+    if (!hasLink) {
+      if (line.trim()) result.push({ type: 'markdown', text: line })
+      continue
+    }
+
+    const linkPart = parts.find((part) => part.kind === 'link')
+    const linkLabel = linkPart?.kind === 'link' ? linkPart.label : ''
+    const linkPath = linkPart?.kind === 'link' ? linkPart.path : ''
+    const textMeta = parts
+      .filter((part) => part.kind !== 'link')
+      .map((part) => part.text)
+      .join('')
+      .replace(/^\s*-\s*/, '')
+      .trim()
+
+    if (section === 'entities') {
+      result.push({ type: 'entity', label: linkLabel, path: linkPath })
+      continue
+    }
+
+    if (section === 'sources') {
+      const meta = textMeta.split(' · ').map((part) => part.trim()).filter(Boolean)
+      const facts = meta.find((part) => /^\(\d+ facts?\)$/.test(part))?.replace(/[()]/g, '')
+      const updated = meta.find((part) => part.startsWith('updated '))
+      const tags = meta
+        .find((part) => part.startsWith('tags: '))
+        ?.replace(/^tags:\s*/, '')
+        .split(',')
+        .map((tag) => tag.trim())
+        .filter(Boolean)
+        .slice(0, 4)
+      result.push({ type: 'source', label: linkLabel, path: linkPath, facts, updated, tags })
+      continue
+    }
+
+    const rowParts = parts.map((part) =>
+      part.kind === 'link'
+        ? { kind: 'link' as const, label: part.label, path: part.path }
+        : { kind: 'text' as const, text: part.text.replace(/^\s*-\s*/, '') }
+    )
+    result.push({ type: 'link-line', parts: rowParts })
+  }
+
+  return result
+}
+
 function WikiBody({
   body,
   onNavigate,
@@ -35,130 +106,93 @@ function WikiBody({
   body: string
   onNavigate: (path: string) => void
 }) {
-  const lines = useMemo(() => body.split('\n'), [body])
-  let section = ''
+  const lines = useMemo(() => processWikiLines(body), [body])
   return (
     <div className="wiki-body space-y-1 text-sm leading-relaxed">
       {lines.map((line, i) => {
-        const heading = line.match(/^##\s+(.+)$/)
-        if (heading) {
-          section = heading[1].toLowerCase()
-          return (
-            <h3
-              key={`heading-${i}`}
-              className="pt-8 pb-2 text-base font-semibold tracking-tight text-foreground first:pt-0"
-            >
-              {heading[1]}
-            </h3>
-          )
-        }
-
-        const parts = splitWikiLinkMarkdown(line)
-        const hasLink = parts.some((part) => part.kind === 'link')
-        if (!hasLink) {
-          if (!line.trim()) return null
-          return (
-            <div key={`md-${i}`} className="wiki-md-chunk">
-              <MarkdownPreview source={line} />
-            </div>
-          )
-        }
-
-        const linkPart = parts.find((part) => part.kind === 'link')
-        const linkLabel = linkPart?.kind === 'link' ? linkPart.label : ''
-        const linkPath = linkPart?.kind === 'link' ? linkPart.path : ''
-        const textMeta = parts
-          .filter((part) => part.kind !== 'link')
-          .map((part) => part.text)
-          .join('')
-          .replace(/^\s*-\s*/, '')
-          .trim()
-
-        if (section === 'entities') {
-          return (
-            <button
-              key={`entity-${i}`}
-              type="button"
-              onClick={() => onNavigate(linkPath)}
-              className="mr-2 mt-2 inline-flex rounded-full border border-border bg-[hsl(var(--secondary))]/60 px-3 py-1 text-xs font-medium text-foreground transition-colors hover:border-[hsl(var(--vault-active))] hover:text-[hsl(var(--vault-active))]"
-            >
-              {linkLabel}
-            </button>
-          )
-        }
-
-        if (section === 'sources') {
-          const meta = textMeta
-            .split(' · ')
-            .map((part) => part.trim())
-            .filter(Boolean)
-          const facts = meta.find((part) => /^\(\d+ facts?\)$/.test(part))
-          const updated = meta.find((part) => part.startsWith('updated '))
-          const tags = meta
-            .find((part) => part.startsWith('tags: '))
-            ?.replace(/^tags:\s*/, '')
-            .split(',')
-            .map((tag) => tag.trim())
-            .filter(Boolean)
-            .slice(0, 4)
-
-          return (
-            <div
-              key={`source-${i}`}
-              className="group rounded-lg border border-transparent px-3 py-3 transition-colors hover:border-border hover:bg-[hsl(var(--secondary))]/40"
-            >
-              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                <button
-                  type="button"
-                  onClick={() => onNavigate(linkPath)}
-                  className="font-medium text-[hsl(var(--vault-active))] underline-offset-2 hover:underline"
-                >
-                  {linkLabel}
-                </button>
-                {facts ? (
-                  <span className="text-xs font-medium text-foreground/70">{facts.replace(/[()]/g, '')}</span>
-                ) : null}
-                {updated ? (
-                  <span className="text-xs text-[hsl(var(--vault-muted))]">{updated}</span>
-                ) : null}
+        switch (line.type) {
+          case 'heading':
+            return (
+              <h3
+                key={`heading-${i}`}
+                className="pt-8 pb-2 text-base font-semibold tracking-tight text-foreground first:pt-0"
+              >
+                {line.text}
+              </h3>
+            )
+          case 'markdown':
+            return (
+              <div key={`md-${i}`} className="wiki-md-chunk">
+                <MarkdownPreview source={line.text} />
               </div>
-              {tags?.length ? (
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="rounded-full bg-[hsl(var(--secondary))] px-2 py-0.5 text-[11px] text-[hsl(var(--vault-muted))]"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              ) : null}
-            </div>
-          )
-        }
-
-        const rowParts = parts.map((part, j) => {
-          if (part.kind === 'link') {
+            )
+          case 'entity':
             return (
               <button
-                key={`${part.path}-${i}-${j}`}
+                key={`entity-${i}`}
                 type="button"
-                onClick={() => onNavigate(part.path)}
-                className="font-medium text-[hsl(var(--vault-active))] underline underline-offset-2 hover:opacity-80"
+                onClick={() => onNavigate(line.path)}
+                className="mr-2 mt-2 inline-flex rounded-full border border-border bg-[hsl(var(--secondary))]/60 px-3 py-1 text-xs font-medium text-foreground transition-colors hover:border-[hsl(var(--vault-active))] hover:text-[hsl(var(--vault-active))]"
               >
-                {part.label}
+                {line.label}
               </button>
             )
-          }
-          return part.text.replace(/^\s*-\s*/, '')
-        })
-
-        return (
-          <div key={`link-line-${i}`} className="border-b border-border/70 py-3 text-sm leading-relaxed">
-            {rowParts}
-          </div>
-        )
+          case 'source':
+            return (
+              <div
+                key={`source-${i}`}
+                className="group rounded-lg border border-transparent px-3 py-3 transition-colors hover:border-border hover:bg-[hsl(var(--secondary))]/40"
+              >
+                <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                  <button
+                    type="button"
+                    onClick={() => onNavigate(line.path)}
+                    className="font-medium text-[hsl(var(--vault-active))] underline-offset-2 hover:underline"
+                  >
+                    {line.label}
+                  </button>
+                  {line.facts ? (
+                    <span className="text-xs font-medium text-foreground/70">{line.facts}</span>
+                  ) : null}
+                  {line.updated ? (
+                    <span className="text-xs text-[hsl(var(--vault-muted))]">{line.updated}</span>
+                  ) : null}
+                </div>
+                {line.tags?.length ? (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {line.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="rounded-full bg-[hsl(var(--secondary))] px-2 py-0.5 text-xs text-[hsl(var(--vault-muted))]"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            )
+          case 'link-line':
+            return (
+              <div key={`link-line-${i}`} className="border-b border-border/70 py-3 text-sm leading-relaxed">
+                {line.parts.map((part, j) => {
+                  if (part.kind === 'link') {
+                    return (
+                      <button
+                        key={`${part.path}-${i}-${j}`}
+                        type="button"
+                        onClick={() => onNavigate(part.path)}
+                        className="font-medium text-[hsl(var(--vault-active))] underline underline-offset-2 hover:opacity-80"
+                      >
+                        {part.label}
+                      </button>
+                    )
+                  }
+                  return part.text
+                })}
+              </div>
+            )
+        }
       })}
     </div>
   )

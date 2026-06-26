@@ -234,7 +234,7 @@ export function MemoriesPanel({
         ) : error ? (
           <div className="px-5 py-8">
             <p className="text-[12px] text-[hsl(var(--error-fg))]">{error}</p>
-            <Button variant="outline" size="sm" className="mt-3 min-h-[44px] text-[11px]" onClick={load}>
+            <Button variant="outline" size="sm" className="mt-3 min-h-[44px] text-xs" onClick={load}>
               Retry
             </Button>
           </div>
@@ -248,12 +248,12 @@ export function MemoriesPanel({
             {!documentId && (onUpload || onAddNote) ? (
               <div className="flex flex-col gap-2 mt-6">
                 {onUpload ? (
-                  <Button size="sm" variant="secondary" className="min-h-[44px] text-[11px]" onClick={onUpload}>
+                  <Button size="sm" variant="secondary" className="min-h-[44px] text-xs" onClick={onUpload}>
                     Upload
                   </Button>
                 ) : null}
                 {onAddNote ? (
-                  <Button variant="outline" size="sm" className="min-h-[44px] text-[11px]" onClick={onAddNote}>
+                  <Button variant="outline" size="sm" className="min-h-[44px] text-xs" onClick={onAddNote}>
                     Add note
                   </Button>
                 ) : null}
@@ -269,7 +269,7 @@ export function MemoriesPanel({
               <Button
                 variant="outline"
                 size="sm"
-                className="mt-4 min-h-[44px] text-[11px]"
+                className="mt-4 min-h-[44px] text-xs"
                 onClick={() => setTypeFilter(null)}
               >
                 Show all types

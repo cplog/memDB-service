@@ -70,7 +70,11 @@ export function AppShell({ user, teams }: AppShellProps) {
   const cs = user.companySlug
   const firstBank = teams[0] ? teamBankId(teams[0].id, cs) : teamBankId('product', cs)
   const [activeBank, setActiveBank] = useState(firstBank)
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    // ponytail: default sidebar closed on mobile (<768px), open on desktop
+    if (typeof window !== 'undefined') return window.innerWidth >= 768
+    return true
+  })
   const [activeView, setActiveView] = useState<ViewType>('sources')
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null)
   const [pendingOps, setPendingOps] = useState(0)
@@ -180,6 +184,25 @@ export function AppShell({ user, teams }: AppShellProps) {
     setActiveView('editor')
   }, [])
 
+  const handleSelectBank = useCallback((bankId: string) => {
+    setActiveBank(bankId)
+    setSelectedDocumentId(null)
+  }, [])
+
+  const handleSelectDocument = useCallback((bankId: string, documentId: string) => {
+    openDocument(bankId, documentId)
+  }, [openDocument])
+
+  const handleAddNote = useCallback(() => {
+    setAttachDocumentId(null)
+    goToView('editor')
+  }, [goToView])
+
+  const handleOnSave = useCallback((navigate?: boolean) => {
+    refreshPendingOps()
+    if (navigate) goToView('knowledge')
+  }, [refreshPendingOps, goToView])
+
   useEffect(() => {
     let cancelled = false
     fetch('/api/stats', {
@@ -210,14 +233,25 @@ export function AppShell({ user, teams }: AppShellProps) {
     : null
 
   return (
+    <>
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-[hsl(var(--primary))] focus:text-[hsl(var(--primary-foreground))] focus:px-4 focus:py-2 focus:rounded-md"
+      >
+        Skip to main content
+      </a>
     <div
       data-workspace-mode={mode}
       className={cn(
-        'h-[100dvh] w-full overflow-hidden grid bg-[hsl(var(--canvas))] text-foreground transition-[grid-template-columns] duration-200 ease-out',
-        sidebarOpen ? 'grid-cols-[14rem_1fr]' : 'grid-cols-[0px_1fr]'
+        'h-[100dvh] w-full overflow-hidden flex bg-[hsl(var(--canvas))] text-foreground',
       )}
     >
-      <aside className="flex flex-col border-r border-[hsl(var(--vault-border))] bg-[hsl(var(--vault))] overflow-hidden">
+      <aside
+        className={cn(
+          'relative flex flex-col border-r border-[hsl(var(--vault-border))] bg-[hsl(var(--vault))] overflow-hidden shrink-0 transition-all duration-200 ease-out will-change-[width,opacity]',
+          sidebarOpen ? 'w-56 opacity-100' : 'w-0 opacity-0 border-r-0',
+        )}
+      >
         <div className="px-3 py-2.5 border-b border-[hsl(var(--vault-border))]">
           <div className="flex items-center gap-2">
             <MarkIcon className="w-4 h-4 text-[hsl(var(--vault-active))]" title="Crewio.ai" />
@@ -225,7 +259,7 @@ export function AppShell({ user, teams }: AppShellProps) {
               <span className="text-[13px] font-medium tracking-tight text-[hsl(var(--foreground))] block truncate">
                 Crewio.ai
               </span>
-              <span className="text-[10px] text-[hsl(var(--vault-muted))] block truncate">
+              <span className="text-xs text-[hsl(var(--vault-muted))] block truncate">
                 {modeMeta.title}
               </span>
             </div>
@@ -233,22 +267,19 @@ export function AppShell({ user, teams }: AppShellProps) {
         </div>
 
         <div className="px-3 pt-2 pb-1">
-          <p className="text-[10px] font-medium uppercase tracking-widest text-[hsl(var(--vault-muted))]">
+          <p className="text-xs font-medium uppercase tracking-widest text-[hsl(var(--vault-muted))]">
             {modeMeta.sidebarLabel}
           </p>
         </div>
 
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 overflow-hidden min-w-0">
           <FileTree
             nodes={treeData}
             activeBank={activeBank}
             activeDocumentId={selectedDocumentId}
             refreshToken={sourcesRefreshToken}
-            onSelectBank={(bankId) => {
-              setActiveBank(bankId)
-              setSelectedDocumentId(null)
-            }}
-            onSelectDocument={(bankId, documentId) => openDocument(bankId, documentId)}
+            onSelectBank={handleSelectBank}
+            onSelectDocument={handleSelectDocument}
             userRole={user.role}
           />
         </div>
@@ -256,7 +287,7 @@ export function AppShell({ user, teams }: AppShellProps) {
         <div className="px-3 py-2.5 border-t border-[hsl(var(--vault-border))]">
           <div className="flex items-center gap-2 min-w-0">
             <div
-              className="w-7 min-h-[44px] rounded shrink-0 flex items-center justify-center text-[11px] font-medium bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))]"
+              className="w-7 min-h-[44px] rounded shrink-0 flex items-center justify-center text-xs font-medium bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))]"
               aria-hidden
             >
               {user.name
@@ -267,7 +298,7 @@ export function AppShell({ user, teams }: AppShellProps) {
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-[12px] font-medium truncate">{user.name}</div>
-              <div className="text-[11px] text-[hsl(var(--vault-muted))] truncate">{user.email}</div>
+              <div className="text-xs text-[hsl(var(--vault-muted))] truncate">{user.email}</div>
             </div>
             <Button
               variant="ghost"
@@ -282,7 +313,7 @@ export function AppShell({ user, teams }: AppShellProps) {
           <div className="mt-1.5 flex items-center gap-1.5 min-w-0">
             <span
               className={cn(
-                'text-[10px] font-medium px-1.5 py-0.5 rounded-sm shrink-0',
+                'text-xs font-medium px-1.5 py-0.5 rounded-sm shrink-0',
                 mode === 'operations'
                   ? 'bg-[hsl(var(--mode-ops-muted))] text-[hsl(var(--mode-ops))]'
                   : mode === 'overview'
@@ -292,14 +323,14 @@ export function AppShell({ user, teams }: AppShellProps) {
             >
               {roleLabel(user.role)}
             </span>
-            <span className="text-[11px] text-[hsl(var(--vault-muted))] truncate">
+            <span className="text-xs text-[hsl(var(--vault-muted))] truncate">
               {activeBankLabel}
             </span>
           </div>
         </div>
       </aside>
 
-      <main className="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
+      <main id="main-content" className="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
         <header className="shrink-0 border-b border-border bg-[hsl(var(--card))]">
           <div className="flex items-center gap-2 px-4 h-10">
             <Button
@@ -322,14 +353,14 @@ export function AppShell({ user, teams }: AppShellProps) {
                   </span>
                 </>
               ) : showBankId ? (
-                <span className="text-[11px] text-[hsl(var(--vault-muted))] truncate hidden sm:inline font-mono ml-1 opacity-70">
+                <span className="text-xs text-[hsl(var(--vault-muted))] truncate hidden sm:inline font-mono ml-1 opacity-70">
                   {activeBank}
                 </span>
               ) : null}
             </nav>
 
             {pendingOps > 0 ? (
-              <span className="ml-auto text-[11px] text-[hsl(var(--warning-fg))] bg-[hsl(var(--warning-bg))] border border-[hsl(var(--warning-border))] px-2 py-0.5 rounded shrink-0">
+              <span className="ml-auto text-xs text-[hsl(var(--warning-fg))] bg-[hsl(var(--warning-bg))] border border-[hsl(var(--warning-border))] px-2 py-0.5 rounded shrink-0">
                 Indexing {pendingOps}
               </span>
             ) : null}
@@ -338,7 +369,7 @@ export function AppShell({ user, teams }: AppShellProps) {
           {!(activeView === 'sources' && selectedDocumentId) ? (
           <div
             className={cn(
-              'px-4 py-1.5 border-t border-border text-[11px] leading-relaxed',
+              'px-4 py-1.5 border-t border-border text-xs leading-relaxed',
               isConsultant && isOpsView(activeView)
                 ? 'bg-[hsl(var(--mode-ops-muted))]/50 text-[hsl(var(--foreground))]/90'
                 : 'bg-[hsl(var(--secondary))]/30 text-[hsl(var(--vault-muted))]'
@@ -374,7 +405,7 @@ export function AppShell({ user, teams }: AppShellProps) {
             {isConsultant ? (
               <>
                 <span className="w-px h-4 bg-border mx-1 shrink-0 self-center" aria-hidden />
-                <span className="text-[10px] font-medium uppercase tracking-widest text-[hsl(var(--mode-ops))] px-1 shrink-0 self-center">
+                <span className="text-xs font-medium uppercase tracking-widest text-[hsl(var(--mode-ops))] px-1 shrink-0 self-center">
                   Ops
                 </span>
                 {OPS_VIEWS.map((view) => (
@@ -429,10 +460,7 @@ export function AppShell({ user, teams }: AppShellProps) {
               documentId={selectedDocumentId}
               onOpenDocument={(docId) => openDocument(activeBank, docId)}
               onSelectEntity={openEntity}
-              onAddNote={() => {
-                setAttachDocumentId(null)
-                goToView('editor')
-              }}
+              onAddNote={handleAddNote}
               onUpload={openSourcesUpload}
               onAddToDocument={addToDocument}
             />
@@ -444,10 +472,7 @@ export function AppShell({ user, teams }: AppShellProps) {
                 bankId={activeBank}
                 teamLabel={activeTeam?.label}
                 attachDocumentId={attachDocumentId}
-                onSave={(navigate) => {
-                  refreshPendingOps()
-                  if (navigate) goToView('knowledge')
-                }}
+                onSave={handleOnSave}
               />
               </div>
             </div>
@@ -525,5 +550,6 @@ export function AppShell({ user, teams }: AppShellProps) {
         ) : null}
       </main>
     </div>
+    </>
   )
 }

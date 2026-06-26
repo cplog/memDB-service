@@ -13,23 +13,23 @@ export function AdminSettings({ bankId }: AdminSettingsProps) {
     <div className="space-y-4">
       <div>
         <h1 className="text-[15px] font-medium tracking-tight">Bank settings</h1>
-        <p className="text-[11px] text-[hsl(var(--vault-muted))] mt-1 leading-relaxed max-w-xl">
+        <p className="text-xs text-[hsl(var(--vault-muted))] mt-1 leading-relaxed max-w-xl">
           Tune what gets retained, how Reflect answers, and which standing playbooks agents reuse.
           Bank name steers world vs experience attribution during extraction.
         </p>
       </div>
       <Tabs defaultValue="retain">
         <TabsList className="bg-[hsl(var(--secondary))] p-0.5 min-h-[44px] flex-wrap h-auto">
-          <TabsTrigger value="retain" className="text-[11px] data-[state=active]:bg-[hsl(var(--canvas))]">
+          <TabsTrigger value="retain" className="text-xs data-[state=active]:bg-[hsl(var(--canvas))]">
             Retain
           </TabsTrigger>
-          <TabsTrigger value="reflect" className="text-[11px] data-[state=active]:bg-[hsl(var(--canvas))]">
+          <TabsTrigger value="reflect" className="text-xs data-[state=active]:bg-[hsl(var(--canvas))]">
             Reflect
           </TabsTrigger>
-          <TabsTrigger value="playbooks" className="text-[11px] data-[state=active]:bg-[hsl(var(--canvas))]">
+          <TabsTrigger value="playbooks" className="text-xs data-[state=active]:bg-[hsl(var(--canvas))]">
             Playbooks
           </TabsTrigger>
-          <TabsTrigger value="advanced" className="text-[11px] data-[state=active]:bg-[hsl(var(--canvas))]">
+          <TabsTrigger value="advanced" className="text-xs data-[state=active]:bg-[hsl(var(--canvas))]">
             Advanced
           </TabsTrigger>
         </TabsList>

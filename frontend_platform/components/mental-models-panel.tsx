@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Spinner } from './hindsight-icons'
+import { MarkdownPreview } from './markdown-field'
 import { cn } from '@/lib/utils'
 
 interface MentalModelItem {
@@ -147,7 +148,7 @@ export function MentalModelsPanel({ bankId }: MentalModelsPanelProps) {
       <div className="flex items-start justify-between gap-3 px-5 py-3 border-b border-border bg-[hsl(var(--card))]">
         <div className="min-w-0 flex-1">
           <h2 className="text-[13px] font-medium tracking-tight">Playbooks</h2>
-          <p className="text-[11px] text-[hsl(var(--vault-muted))] mt-1 leading-relaxed max-w-md">
+          <p className="text-xs text-[hsl(var(--vault-muted))] mt-1 leading-relaxed max-w-md">
             Mental models are cached Reflect answers. Reflect pulls them in automatically when
             relevant -- use them for renewal playbooks, critical paths, and standing priorities.
           </p>
@@ -155,7 +156,7 @@ export function MentalModelsPanel({ bankId }: MentalModelsPanelProps) {
         <Button
           type="button"
           variant="outline"
-          className="text-[11px] min-h-[44px] shrink-0"
+          className="text-xs min-h-[44px] shrink-0"
           onClick={() => setShowCreate((v) => !v)}
         >
           {showCreate ? 'Cancel' : 'New playbook'}
@@ -206,7 +207,7 @@ export function MentalModelsPanel({ bankId }: MentalModelsPanelProps) {
             <div className="flex items-center justify-between">
               <div>
                 <Label className="text-sm">Auto-refresh after consolidation</Label>
-                <p className="text-[11px] text-[hsl(var(--vault-muted))]">
+                <p className="text-xs text-[hsl(var(--vault-muted))]">
                   Regenerate when new memories consolidate
                 </p>
               </div>
@@ -242,21 +243,22 @@ export function MentalModelsPanel({ bankId }: MentalModelsPanelProps) {
                   type="button"
                   className="w-full text-left px-3 py-3 min-h-[44px] flex items-start justify-between gap-2"
                   onClick={() => setExpandedId(expandedId === m.id ? null : m.id)}
+                  aria-expanded={expandedId === m.id}
                 >
                   <div className="min-w-0">
                     <p className="text-[13px] font-medium truncate">{m.name}</p>
-                    <p className="text-[11px] text-[hsl(var(--vault-muted))] truncate mt-0.5">
+                    <p className="text-xs text-[hsl(var(--vault-muted))] truncate mt-0.5">
                       {m.source_query ?? m.id}
                     </p>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
                     {m.is_stale ? (
-                      <Badge variant="secondary" className="text-[10px]">
+                      <Badge variant="secondary" className="text-xs">
                         stale
                       </Badge>
                     ) : null}
                     {m.trigger?.refresh_after_consolidation ? (
-                      <Badge variant="outline" className="text-[10px]">
+                      <Badge variant="outline" className="text-xs">
                         auto
                       </Badge>
                     ) : null}
@@ -265,16 +267,18 @@ export function MentalModelsPanel({ bankId }: MentalModelsPanelProps) {
                 {expandedId === m.id ? (
                   <div className="px-3 pb-3 space-y-3 border-t border-border pt-3">
                     {m.content ? (
-                      <p className="text-[12px] whitespace-pre-wrap leading-relaxed">{m.content}</p>
+                      <div className="prose prose-sm prose-slate max-w-none">
+                        <MarkdownPreview source={m.content} />
+                      </div>
                     ) : (
-                      <p className="text-[11px] text-[hsl(var(--vault-muted))] italic">
+                      <p className="text-xs text-[hsl(var(--vault-muted))] italic">
                         Content generating… refresh in a minute if empty.
                       </p>
                     )}
                     {m.tags?.length ? (
                       <div className="flex flex-wrap gap-1">
                         {m.tags.map((t) => (
-                          <Badge key={t} variant="secondary" className="text-[10px]">
+                          <Badge key={t} variant="secondary" className="text-xs">
                             {t}
                           </Badge>
                         ))}
@@ -284,7 +288,7 @@ export function MentalModelsPanel({ bankId }: MentalModelsPanelProps) {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="text-[11px] min-h-[44px]"
+                        className="text-xs min-h-[44px]"
                         disabled={busyId === m.id}
                         onClick={() => runAction(m.id, 'refresh')}
                       >
@@ -293,7 +297,7 @@ export function MentalModelsPanel({ bankId }: MentalModelsPanelProps) {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="text-[11px] min-h-[44px]"
+                        className="text-xs min-h-[44px]"
                         disabled={busyId === m.id}
                         onClick={() => runAction(m.id, 'clear')}
                       >
@@ -302,7 +306,7 @@ export function MentalModelsPanel({ bankId }: MentalModelsPanelProps) {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="text-[11px] min-h-[44px] text-[hsl(var(--error-fg))]"
+                        className="text-xs min-h-[44px] text-[hsl(var(--error-fg))]"
                         disabled={busyId === m.id}
                         onClick={() => runAction(m.id, 'delete')}
                       >

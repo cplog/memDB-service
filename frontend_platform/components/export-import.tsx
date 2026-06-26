@@ -146,7 +146,7 @@ export function ExportImport({ bankId, bankLabel }: ExportImportProps) {
             Backup, migrate, or restore bank data
           </p>
         </div>
-        <Badge variant="secondary" className="text-[10px] font-normal">
+        <Badge variant="secondary" className="text-xs font-normal">
           {bankId}
         </Badge>
       </div>
@@ -170,7 +170,7 @@ export function ExportImport({ bankId, bankLabel }: ExportImportProps) {
             <Textarea
               value={exportData.slice(0, 500) + (exportData.length > 500 ? '...' : '')}
               readOnly
-              className="h-24 text-[11px] font-mono"
+              className="h-24 text-xs font-mono"
             />
           ) : null}
         </div>
@@ -181,14 +181,14 @@ export function ExportImport({ bankId, bankLabel }: ExportImportProps) {
             <h2 className="text-xs font-medium uppercase tracking-widest text-[hsl(var(--vault-muted))]">
               Export wiki (OKF)
             </h2>
-            <Badge variant="outline" className="text-[10px] font-normal">
+            <Badge variant="outline" className="text-xs font-normal">
               sources + entities
             </Badge>
           </div>
           <p className="text-xs text-[hsl(var(--vault-muted))] leading-relaxed">
-            Generate read-only Markdown pages under <code className="text-[11px]">sources/</code>{' '}
-            and <code className="text-[11px]">entities/</code> with OKF-style frontmatter and
-            provenance links. Uses stable <code className="text-[11px]">document_id</code> slugs.
+            Generate read-only Markdown pages under <code className="text-xs">sources/</code>{' '}
+            and <code className="text-xs">entities/</code> with OKF-style frontmatter and
+            provenance links. Uses stable <code className="text-xs">document_id</code> slugs.
           </p>
           <div className="flex flex-wrap gap-2">
             <Button
@@ -218,7 +218,7 @@ export function ExportImport({ bankId, bankLabel }: ExportImportProps) {
             <h2 className="text-xs font-medium uppercase tracking-widest text-[hsl(var(--vault-muted))]">
               Import bank
             </h2>
-            <Badge variant="outline" className="text-[10px] font-normal">
+            <Badge variant="outline" className="text-xs font-normal">
               New bank
             </Badge>
           </div>
@@ -229,7 +229,7 @@ export function ExportImport({ bankId, bankLabel }: ExportImportProps) {
             value={importData}
             onChange={(e) => setImportData(e.target.value)}
             placeholder="Paste exported JSON here…"
-            className="h-40 text-[11px] font-mono"
+            className="h-40 text-xs font-mono"
           />
           <Button onClick={handleImport} disabled={importing} variant="secondary" className="text-xs min-h-[44px]">
             {importing ? <Spinner className="mr-2" /> : null}

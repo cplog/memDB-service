@@ -152,7 +152,7 @@ export function BankConfig({ bankId, section = 'retain' }: BankConfigProps) {
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-[13px] font-medium">{sectionTitle}</CardTitle>
-          <Badge variant="secondary" className="text-[10px] font-mono">
+          <Badge variant="secondary" className="text-xs font-mono">
             {bankId}
           </Badge>
         </div>
@@ -167,9 +167,9 @@ export function BankConfig({ bankId, section = 'retain' }: BankConfigProps) {
             {section === 'retain' ? (
               <>
                 <div className="rounded-sm border border-border bg-[hsl(var(--canvas))] px-3 py-2">
-                  <p className="text-[11px] text-[hsl(var(--vault-muted))] leading-relaxed">
+                  <p className="text-xs text-[hsl(var(--vault-muted))] leading-relaxed">
                     Set a human-readable bank name so first-person statements are attributed
-                    correctly. Use each item&apos;s <code className="text-[10px]">context</code>{' '}
+                    correctly. Use each item&apos;s <code className="text-xs">context</code>{' '}
                     field on transcripts to name the speaker (e.g. &quot;Customer Maria is
                     speaking&quot;).
                   </p>
@@ -209,7 +209,7 @@ export function BankConfig({ bankId, section = 'retain' }: BankConfigProps) {
                     placeholder="Always include technical decisions and API trade-offs. Ignore meeting logistics and greetings."
                     className="min-h-[88px] text-[12px]"
                   />
-                  <p className="text-[11px] text-[hsl(var(--vault-muted))] leading-relaxed">
+                  <p className="text-xs text-[hsl(var(--vault-muted))] leading-relaxed">
                     Plain-language steer injected into extraction — narrows focus without replacing
                     built-in rules.
                   </p>
@@ -235,7 +235,7 @@ export function BankConfig({ bankId, section = 'retain' }: BankConfigProps) {
                     placeholder="meetings"
                     className="min-h-[44px] text-[12px] font-mono"
                   />
-                  <p className="text-[11px] text-[hsl(var(--vault-muted))] leading-relaxed">
+                  <p className="text-xs text-[hsl(var(--vault-muted))] leading-relaxed">
                     Key into retain_strategies below. Used when upload/note does not pick a
                     strategy.
                   </p>
@@ -247,9 +247,9 @@ export function BankConfig({ bankId, section = 'retain' }: BankConfigProps) {
                     value={retainStrategiesJson}
                     onChange={(e) => setRetainStrategiesJson(e.target.value)}
                     placeholder={'{"meetings":{"retain_extraction_mode":"concise"},"uploads":{"retain_extraction_mode":"verbose"}}'}
-                    className="min-h-[100px] text-[11px] font-mono"
+                    className="min-h-[100px] text-xs font-mono"
                   />
-                  <p className="text-[11px] text-[hsl(var(--vault-muted))] leading-relaxed">
+                  <p className="text-xs text-[hsl(var(--vault-muted))] leading-relaxed">
                     Named extraction profiles for different content types in this team bank.
                     Scenarios choose tags; strategies choose how content is extracted.
                   </p>
@@ -288,7 +288,7 @@ export function BankConfig({ bankId, section = 'retain' }: BankConfigProps) {
                 <div className="flex items-center justify-between">
                   <div>
                     <Label className="text-sm">Enable observations</Label>
-                    <p className="text-[11px] text-[hsl(var(--vault-muted))]">
+                    <p className="text-xs text-[hsl(var(--vault-muted))]">
                       Consolidate patterns after retain (async background job)
                     </p>
                   </div>
@@ -306,10 +306,10 @@ export function BankConfig({ bankId, section = 'retain' }: BankConfigProps) {
                 </div>
 
                 <div className="rounded-sm border border-border bg-[hsl(var(--canvas))] px-3 py-2">
-                  <p className="text-[11px] text-[hsl(var(--vault-muted))] leading-relaxed">
+                  <p className="text-xs text-[hsl(var(--vault-muted))] leading-relaxed">
                     <span className="font-medium text-foreground">Scopes:</span> private retains use{' '}
-                    <code className="text-[10px]">per_tag</code> consolidation; shared retains use{' '}
-                    <code className="text-[10px]">combined</code> — keeps team/private observations
+                    <code className="text-xs">per_tag</code> consolidation; shared retains use{' '}
+                    <code className="text-xs">combined</code> — keeps team/private observations
                     from bleeding across visibility boundaries.
                   </p>
                 </div>
@@ -324,9 +324,9 @@ export function BankConfig({ bankId, section = 'retain' }: BankConfigProps) {
                     value={entityLabelsJson}
                     onChange={(e) => setEntityLabelsJson(e.target.value)}
                     placeholder='[{"key":"content_kind","description":"…","type":"value","values":[…]}]'
-                    className="min-h-[120px] text-[11px] font-mono"
+                    className="min-h-[120px] text-xs font-mono"
                   />
-                  <p className="text-[11px] text-[hsl(var(--vault-muted))] leading-relaxed">
+                  <p className="text-xs text-[hsl(var(--vault-muted))] leading-relaxed">
                     Controlled vocabulary extracted at retain time — labels become entities and
                     link related memories. Example keys: pedagogy:scaffolding, audience:client.
                   </p>
@@ -336,7 +336,7 @@ export function BankConfig({ bankId, section = 'retain' }: BankConfigProps) {
                   <div className="flex items-center justify-between">
                     <div>
                       <Label className="text-sm">Store document text</Label>
-                      <p className="text-[11px] text-[hsl(var(--vault-muted))]">
+                      <p className="text-xs text-[hsl(var(--vault-muted))]">
                         Keep raw source alongside extracted facts
                       </p>
                     </div>
@@ -345,7 +345,7 @@ export function BankConfig({ bankId, section = 'retain' }: BankConfigProps) {
                   <div className="flex items-center justify-between">
                     <div>
                       <Label className="text-sm">Enable LLM tracing</Label>
-                      <p className="text-[11px] text-[hsl(var(--vault-muted))]">
+                      <p className="text-xs text-[hsl(var(--vault-muted))]">
                         Debug retain/recall calls
                       </p>
                     </div>
@@ -355,10 +355,10 @@ export function BankConfig({ bankId, section = 'retain' }: BankConfigProps) {
 
                 {config ? (
                   <div className="bg-[hsl(var(--canvas))] rounded-sm p-3 border border-border">
-                    <div className="text-[10px] font-medium text-[hsl(var(--vault-muted))] mb-2 uppercase tracking-widest">
+                    <div className="text-xs font-medium text-[hsl(var(--vault-muted))] mb-2 uppercase tracking-widest">
                       Resolved config
                     </div>
-                    <pre className="text-[10px] text-[hsl(var(--vault-muted))] overflow-auto max-h-40 font-mono">
+                    <pre className="text-xs text-[hsl(var(--vault-muted))] overflow-auto max-h-40 font-mono">
                       {JSON.stringify(config, null, 2)}
                     </pre>
                   </div>

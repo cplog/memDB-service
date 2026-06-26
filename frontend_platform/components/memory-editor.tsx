@@ -147,7 +147,7 @@ export function MemoryEditor({
     <section className="border border-border bg-[hsl(var(--card))] p-5 space-y-4 max-w-2xl">
       <div>
         <h1 className="text-[13px] font-medium">Add note</h1>
-        <p className="text-[11px] text-[hsl(var(--vault-muted))] mt-0.5 leading-relaxed">
+        <p className="text-xs text-[hsl(var(--vault-muted))] mt-0.5 leading-relaxed">
           Plain text for {teamLabel ?? bankId}. Title becomes a stable source id.
         </p>
       </div>
@@ -157,7 +157,7 @@ export function MemoryEditor({
           type="button"
           variant={targetMode === 'new' ? 'default' : 'outline'}
           size="sm"
-          className="min-h-[44px] text-[11px]"
+          className="min-h-[44px] text-xs"
           onClick={() => setTargetMode('new')}
         >
           New document
@@ -166,7 +166,7 @@ export function MemoryEditor({
           type="button"
           variant={targetMode === 'existing' ? 'default' : 'outline'}
           size="sm"
-          className="min-h-[44px] text-[11px]"
+          className="min-h-[44px] text-xs"
           onClick={() => setTargetMode('existing')}
         >
           Attach to existing
@@ -205,7 +205,7 @@ export function MemoryEditor({
 
       <button
         type="button"
-        className="flex items-center gap-1.5 text-[11px] text-[hsl(var(--vault-muted))] hover:text-[hsl(var(--vault-active))] min-h-[44px]"
+        className="flex items-center gap-1.5 text-xs text-[hsl(var(--vault-muted))] hover:text-[hsl(var(--vault-active))] min-h-[44px]"
         aria-expanded={detailsOpen}
         onClick={() => setDetailsOpen((o) => !o)}
       >
@@ -228,7 +228,7 @@ export function MemoryEditor({
           />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <Select value={sourceType || undefined} onValueChange={setSourceType}>
-            <SelectTrigger className="min-h-[44px] text-[11px]">
+            <SelectTrigger className="min-h-[44px] text-xs">
               <SelectValue placeholder="Source type" />
             </SelectTrigger>
             <SelectContent>
@@ -247,23 +247,27 @@ export function MemoryEditor({
             aria-label="Source date"
           />
           <Input
+            id="meeting-name"
             value={meetingName}
             onChange={(e) => setMeetingName(e.target.value)}
             placeholder="Meeting name"
             className="text-[12px] min-h-[44px]"
+            aria-label="Meeting name"
           />
           <Input
+            id="ticket-id"
             value={ticketId}
             onChange={(e) => setTicketId(e.target.value)}
             placeholder="Ticket ID"
             className="text-[12px] min-h-[44px]"
+            aria-label="Ticket ID"
           />
           </div>
         </div>
       ) : null}
 
       {error ? (
-        <p className="text-[11px] text-[hsl(var(--error-fg))]">{error}</p>
+        <p className="text-xs text-[hsl(var(--error-fg))]">{error}</p>
       ) : null}
 
       <Button
@@ -282,12 +286,12 @@ export function MemoryEditor({
 
       {result ? (
         <div className="flex items-center justify-between bg-[hsl(var(--success-bg))] border border-[hsl(var(--success-border))] rounded-sm px-3 py-2">
-          <p className="text-[11px] text-[hsl(var(--success-fg))]">{RETAIN_PROCESSING_HINT}</p>
+          <p className="text-xs text-[hsl(var(--success-fg))]">{RETAIN_PROCESSING_HINT}</p>
           <Button
             type="button"
             variant="ghost"
             size="sm"
-            className="min-h-[44px] text-[11px] text-[hsl(var(--success-fg))] hover:opacity-80"
+            className="min-h-[44px] text-xs text-[hsl(var(--success-fg))] hover:opacity-80"
             onClick={() => onSave(true)}
           >
             Go to Knowledge

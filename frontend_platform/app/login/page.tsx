@@ -61,7 +61,7 @@ export default function LoginPage() {
           <MarkIcon className="size-5 text-[hsl(var(--vault-active))]" title="Crewio.ai" />
           <div>
             <h1 className="text-[15px] font-medium tracking-tight">Crewio.ai Portal</h1>
-            <p className="text-[11px] text-[hsl(var(--vault-muted))]">Sign in to your vault</p>
+            <p className="text-xs text-[hsl(var(--vault-muted))]">Sign in to your vault</p>
           </div>
         </div>
 
@@ -70,7 +70,7 @@ export default function LoginPage() {
         ) : (
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-1.5">
-              <label htmlFor="email" className="text-[11px] text-[hsl(var(--vault-muted))]">
+              <label htmlFor="email" className="text-xs text-[hsl(var(--vault-muted))]">
                 Email
               </label>
               <Input
@@ -84,7 +84,7 @@ export default function LoginPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <label htmlFor="password" className="text-[11px] text-[hsl(var(--vault-muted))]">
+              <label htmlFor="password" className="text-xs text-[hsl(var(--vault-muted))]">
                 Password
               </label>
               <Input
@@ -100,7 +100,7 @@ export default function LoginPage() {
             {error ? (
               <p
                 role="alert"
-                className="text-[11px] text-[hsl(var(--error-fg))] bg-[hsl(var(--error-bg))] border border-[hsl(var(--error-border))] px-3 py-2 rounded-sm"
+                className="text-xs text-[hsl(var(--error-fg))] bg-[hsl(var(--error-bg))] border border-[hsl(var(--error-border))] px-3 py-2 rounded-sm"
               >
                 {error}
               </p>
@@ -112,8 +112,8 @@ export default function LoginPage() {
           </form>
         )}
 
-        <div className="mt-6 pt-4 border-t border-border text-[11px] text-[hsl(var(--vault-muted))] space-y-3 leading-relaxed">
-          <p className="uppercase tracking-widest text-[10px]">Demo accounts</p>
+        <div className="mt-6 pt-4 border-t border-border text-xs text-[hsl(var(--vault-muted))] space-y-3 leading-relaxed">
+          <p className="uppercase tracking-widest text-xs">Demo accounts</p>
           <div className="space-y-2">
             <div>
               <p className="text-[hsl(var(--foreground))]/90 font-medium">eric@consultant.com</p>

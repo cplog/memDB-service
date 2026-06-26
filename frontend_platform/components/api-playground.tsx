@@ -557,7 +557,7 @@ export function ApiPlayground({ bankId }: { bankId: string }) {
                           value={bodyOverrides[endpoint.id] || ''}
                           onChange={(e) => updateBodyOverride(endpoint.id, e.target.value)}
                         />
-                        <p className="text-[11px] text-muted-foreground">
+                        <p className="text-xs text-muted-foreground">
                           Leave empty to use the default body. Edit to customize the request payload.
                         </p>
                       </div>

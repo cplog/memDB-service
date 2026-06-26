@@ -184,7 +184,7 @@ export function KnowledgeGraph({
       <div className="flex flex-wrap items-center gap-3 px-5 py-3 border-b border-border bg-[hsl(var(--card))]">
         <div className="min-w-0 flex-1">
           <h1 className="text-[13px] font-medium tracking-tight">Knowledge browser</h1>
-          <p className="text-[11px] text-[hsl(var(--vault-muted))] mt-0.5">
+          <p className="text-xs text-[hsl(var(--vault-muted))] mt-0.5">
             Read linked wiki pages or explore the visual graph
           </p>
         </div>
@@ -206,7 +206,7 @@ export function KnowledgeGraph({
               aria-selected={mode === id}
               onClick={() => setMode(id)}
               className={cn(
-                'min-h-[44px] px-4 text-[11px] font-medium',
+                'min-h-[44px] px-4 text-xs font-medium',
                 mode === id
                   ? 'bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))]'
                   : 'text-[hsl(var(--vault-muted))] hover:text-foreground'
@@ -232,7 +232,7 @@ export function KnowledgeGraph({
         <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
           <div className="flex items-center gap-3 px-5 py-2 border-b border-border bg-[hsl(var(--vault))]/40">
             {LEGEND.map(({ type, label }) => (
-              <span key={type} className="inline-flex items-center gap-1.5 text-[10px] text-[hsl(var(--vault-muted))]">
+              <span key={type} className="inline-flex items-center gap-1.5 text-xs text-[hsl(var(--vault-muted))]">
                 <span
                   className="w-2.5 h-2.5 rounded-full shrink-0"
                   style={{ backgroundColor: WIKI_GRAPH_COLORS[type] }}
@@ -242,15 +242,17 @@ export function KnowledgeGraph({
               </span>
             ))}
             <div className="w-px h-3 bg-border" aria-hidden />
+            <label htmlFor="graph-search" className="sr-only">Find node</label>
             <input
+              id="graph-search"
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Find node…"
-              className="w-28 text-[11px] rounded-md border border-border bg-[hsl(var(--canvas))] px-2 py-1 focus:outline-none focus:ring-1 focus:ring-[hsl(var(--vault-active))]"
+              className="w-28 text-xs rounded-md border border-border bg-[hsl(var(--canvas))] px-2 py-1 focus:outline-none focus:ring-1 focus:ring-[hsl(var(--vault-active))]"
             />
             {nodes.length > 0 ? (
-              <span className="text-[10px] text-[hsl(var(--vault-muted))] tabular-nums">
+              <span className="text-xs text-[hsl(var(--vault-muted))] tabular-nums">
                 {nodes.length} pages · {links.length} links
               </span>
             ) : null}
@@ -280,7 +282,7 @@ export function KnowledgeGraph({
               ) : graphEmpty ? (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-center px-6">
                   <p className="text-[12px] text-[hsl(var(--vault-muted))]">No graph yet</p>
-                  <p className="text-[11px] text-[hsl(var(--vault-muted))] max-w-xs opacity-80">
+                  <p className="text-xs text-[hsl(var(--vault-muted))] max-w-xs opacity-80">
                     Retain team sources and facts. Wiki pages and their links become the graph.
                   </p>
                 </div>
@@ -328,7 +330,7 @@ export function KnowledgeGraph({
                       />
                       <div className="min-w-0">
                         <p className="text-[13px] font-medium leading-snug">{selected.label}</p>
-                        <p className="text-[10px] mt-1 capitalize text-[hsl(var(--vault-muted))]">
+                        <p className="text-xs mt-1 capitalize text-[hsl(var(--vault-muted))]">
                           {selected.type}
                         </p>
                       </div>
@@ -344,7 +346,7 @@ export function KnowledgeGraph({
                       <Button
                         variant="outline"
                         size="sm"
-                        className="min-h-[44px] text-[11px]"
+                        className="min-h-[44px] text-xs"
                         onClick={() => onSelectEntity(selected.entityId!, selected.label)}
                       >
                         Open entity detail
@@ -354,7 +356,7 @@ export function KnowledgeGraph({
                       <Button
                         variant="outline"
                         size="sm"
-                        className="min-h-[44px] text-[11px]"
+                        className="min-h-[44px] text-xs"
                         onClick={() => onOpenDocument(selected.documentId!)}
                       >
                         Open source

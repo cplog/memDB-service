@@ -218,18 +218,18 @@ export function FileUpload({
       {!isInline ? (
         <div>
           <h1 className="text-[13px] font-medium">Upload files</h1>
-          <p className="text-[11px] text-[hsl(var(--vault-muted))] mt-0.5 flex flex-wrap items-center gap-2">
+          <p className="text-xs text-[hsl(var(--vault-muted))] mt-0.5 flex flex-wrap items-center gap-2">
             Retained for {teamLabel ?? bankId}
-            <Badge variant="secondary" className="text-[10px] font-normal">
+            <Badge variant="secondary" className="text-xs font-normal">
               {bankId}
             </Badge>
           </p>
-          <p className="text-[11px] text-[hsl(var(--vault-muted))] mt-2 leading-relaxed">
+          <p className="text-xs text-[hsl(var(--vault-muted))] mt-2 leading-relaxed">
             Uploaded files appear under the Sources tab. {RETAIN_PROCESSING_HINT}
           </p>
         </div>
       ) : (
-        <p className="text-[11px] text-[hsl(var(--vault-muted))] leading-relaxed">
+        <p className="text-xs text-[hsl(var(--vault-muted))] leading-relaxed">
           Drop files here to add sources. They appear in the list below after indexing.
         </p>
       )}
@@ -241,7 +241,7 @@ export function FileUpload({
               type="button"
               variant={attachMode === 'new' ? 'default' : 'outline'}
               size="sm"
-              className="min-h-[36px] text-[10px]"
+              className="min-h-[36px] text-xs"
               onClick={() => setAttachMode('new')}
             >
               New source
@@ -250,7 +250,7 @@ export function FileUpload({
               type="button"
               variant={attachMode === 'existing' ? 'default' : 'outline'}
               size="sm"
-              className="min-h-[36px] text-[10px]"
+              className="min-h-[36px] text-xs"
               onClick={() => setAttachMode('existing')}
             >
               Replace existing
@@ -258,7 +258,7 @@ export function FileUpload({
           </div>
           {attachMode === 'existing' ? (
             <Select value={selectedDocId || undefined} onValueChange={setSelectedDocId}>
-              <SelectTrigger className="min-h-[44px] text-[11px]">
+              <SelectTrigger className="min-h-[44px] text-xs">
                 <SelectValue placeholder="Choose document to replace…" />
               </SelectTrigger>
               <SelectContent>
@@ -275,7 +275,7 @@ export function FileUpload({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         <Select value={sourceType || undefined} onValueChange={setSourceType}>
-          <SelectTrigger className="min-h-[40px] text-[11px]">
+          <SelectTrigger className="min-h-[40px] text-xs">
             <SelectValue placeholder="Source type (optional)" />
           </SelectTrigger>
           <SelectContent>
@@ -290,20 +290,24 @@ export function FileUpload({
           type="date"
           value={sourceDate}
           onChange={(e) => setSourceDate(e.target.value)}
-          className="rounded-sm border border-border bg-[hsl(var(--canvas))] px-2 py-1.5 text-[11px] min-h-[40px]"
+          className="rounded-sm border border-border bg-[hsl(var(--canvas))] px-2 py-1.5 text-xs min-h-[40px]"
           aria-label="Source date"
         />
         <input
+          id="upload-meeting-name"
           value={meetingName}
           onChange={(e) => setMeetingName(e.target.value)}
           placeholder="Meeting name (optional)"
-          className="rounded-sm border border-border bg-[hsl(var(--canvas))] px-2 py-1.5 text-[11px] min-h-[40px]"
+          className="rounded-sm border border-border bg-[hsl(var(--canvas))] px-2 py-1.5 text-xs min-h-[40px]"
+          aria-label="Meeting name"
         />
         <input
+          id="upload-ticket-id"
           value={ticketId}
           onChange={(e) => setTicketId(e.target.value)}
           placeholder="Ticket ID (optional)"
-          className="rounded-sm border border-border bg-[hsl(var(--canvas))] px-2 py-1.5 text-[11px] min-h-[40px]"
+          className="rounded-sm border border-border bg-[hsl(var(--canvas))] px-2 py-1.5 text-xs min-h-[40px]"
+          aria-label="Ticket ID"
         />
       </div>
 
@@ -318,9 +322,9 @@ export function FileUpload({
 
       {userRole === 'consultant' ? (
         <div className="flex items-center gap-3">
-          <span className="text-[11px] text-[hsl(var(--vault-muted))]">Parser</span>
+          <span className="text-xs text-[hsl(var(--vault-muted))]">Parser</span>
           <Select value={parser} onValueChange={setParser}>
-            <SelectTrigger className="w-44 min-h-[44px] text-[11px]">
+            <SelectTrigger className="w-44 min-h-[44px] text-xs">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -352,7 +356,7 @@ export function FileUpload({
             browse
           </label>
         </p>
-        <p className="text-[10px] text-[hsl(var(--vault-muted))] mt-1 opacity-70">
+        <p className="text-xs text-[hsl(var(--vault-muted))] mt-1 opacity-70">
           PDF, DOCX, TXT, MD, CSV, images · max 100MB
         </p>
         <input
@@ -372,19 +376,19 @@ export function FileUpload({
               key={`${file.name}-${i}`}
               className="flex items-center gap-3 rounded-sm border border-border bg-[hsl(var(--canvas))] px-3 py-2"
             >
-              <span className="text-[9px] font-medium tracking-wider text-[hsl(var(--vault-muted))] w-8 shrink-0 tabular-nums">
+              <span className="text-xs font-medium tracking-wider text-[hsl(var(--vault-muted))] w-8 shrink-0 tabular-nums">
                 {fileExtLabel(file.name)}
               </span>
               <div className="flex-1 min-w-0">
                 <div className="text-[12px] truncate">{file.name}</div>
-                <div className="text-[10px] text-[hsl(var(--vault-muted))]">
+                <div className="text-xs text-[hsl(var(--vault-muted))]">
                   {(file.size / 1024).toFixed(1)} KB
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => removeFile(i)}
-                className="text-[hsl(var(--vault-muted))] hover:text-[hsl(var(--error-fg))] text-[11px] min-h-[44px] min-w-[44px] flex items-center justify-center"
+                className="text-[hsl(var(--vault-muted))] hover:text-[hsl(var(--error-fg))] text-xs min-h-[44px] min-w-[44px] flex items-center justify-center"
                 aria-label={`Remove ${file.name}`}
               >
                 Remove
@@ -426,7 +430,7 @@ export function FileUpload({
                     type="button"
                     variant="ghost"
                     size="sm"
-                    className="min-h-[44px] text-[10px] text-[hsl(var(--success-fg))] hover:opacity-80"
+                    className="min-h-[44px] text-xs text-[hsl(var(--success-fg))] hover:opacity-80"
                     onClick={() => onSuccess?.([])} // trigger navigation in full page mode
                   >
                     Go to Sources
@@ -434,9 +438,9 @@ export function FileUpload({
                 ) : null}
               </div>
               {r.success ? (
-                <p className="text-[10px] mt-1 opacity-90">{RETAIN_PROCESSING_HINT}</p>
+                <p className="text-xs mt-1 opacity-90">{RETAIN_PROCESSING_HINT}</p>
               ) : (
-                <p className="text-[10px] mt-1">{r.error}</p>
+                <p className="text-xs mt-1">{r.error}</p>
               )}
             </li>
           ))}

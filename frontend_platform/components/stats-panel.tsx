@@ -46,7 +46,7 @@ export function StatsPanel({ bankId }: StatsPanelProps) {
     <section>
       <div className="flex items-center justify-between gap-3 px-5 py-3 border-b border-border bg-[hsl(var(--card))]">
         <h2 className="text-sm font-medium tracking-tight">Bank stats</h2>
-        <Badge variant="secondary" className="text-[10px] font-normal">
+        <Badge variant="secondary" className="text-xs font-normal">
           {bankId}
         </Badge>
       </div>

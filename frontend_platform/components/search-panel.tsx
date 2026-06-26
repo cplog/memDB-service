@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Spinner } from './hindsight-icons'
+import { MarkdownPreview } from './markdown-field'
 import { cn } from '@/lib/utils'
 import { documentDisplayName, truncateDocumentLabel } from '@/lib/document-display'
 import { factTypeStyle } from '@/lib/workspace-colors'
@@ -58,7 +59,7 @@ function TypeBadge({ type }: { type?: string | null }) {
   return (
     <Badge
       variant="outline"
-      className={cn('text-[10px] capitalize font-normal border shrink-0', style.badge)}
+      className={cn('text-xs capitalize font-normal border shrink-0', style.badge)}
     >
       <span className={cn('inline-block w-1.5 h-1.5 rounded-full mr-1.5', style.dot)} aria-hidden />
       {style.label}
@@ -74,11 +75,11 @@ function ReflectProvenance({ basedOn }: { basedOn: ReflectBasedOn }) {
   return (
     <div className="rounded-sm border border-border bg-[hsl(var(--canvas))] p-4 space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-[10px] font-medium text-[hsl(var(--vault-muted))] uppercase tracking-widest">
+        <p className="text-xs font-medium text-[hsl(var(--vault-muted))] uppercase tracking-widest">
           Based on · {total}
         </p>
         {basedOn.usage?.total_tokens ? (
-          <span className="text-[10px] text-[hsl(var(--vault-muted))] tabular-nums">
+          <span className="text-xs text-[hsl(var(--vault-muted))] tabular-nums">
             {basedOn.usage.total_tokens.toLocaleString()} tokens
           </span>
         ) : null}
@@ -86,18 +87,18 @@ function ReflectProvenance({ basedOn }: { basedOn: ReflectBasedOn }) {
 
       {basedOn.mentalModels.length > 0 ? (
         <div>
-          <p className="text-[10px] font-medium text-[hsl(var(--vault-muted))] mb-2">
+          <p className="text-xs font-medium text-[hsl(var(--vault-muted))] mb-2">
             Mental models · {basedOn.mentalModels.length}
           </p>
           <ul className="space-y-2">
             {basedOn.mentalModels.map((m, i) => (
-              <li key={m.id ?? i} className="text-[12px] leading-relaxed pl-2 border-l-2 border-teal-300/60">
+              <li key={m.id ?? i} className="text-[12px] leading-relaxed pl-2 border-l-2 border-[hsl(var(--vault-border))]">
                 <div className="flex flex-wrap items-start gap-2">
                   <TypeBadge type="mental_model" />
                   <span>{m.text ?? '(empty)'}</span>
                 </div>
                 {m.context ? (
-                  <p className="text-[10px] text-[hsl(var(--vault-muted))] mt-1">{m.context}</p>
+                  <p className="text-xs text-[hsl(var(--vault-muted))] mt-1">{m.context}</p>
                 ) : null}
               </li>
             ))}
@@ -107,7 +108,7 @@ function ReflectProvenance({ basedOn }: { basedOn: ReflectBasedOn }) {
 
       {basedOn.memories.length > 0 ? (
         <div>
-          <p className="text-[10px] font-medium text-[hsl(var(--vault-muted))] mb-2">
+          <p className="text-xs font-medium text-[hsl(var(--vault-muted))] mb-2">
             Memories · {basedOn.memories.length}
           </p>
           <ul className="space-y-2">
@@ -118,7 +119,7 @@ function ReflectProvenance({ basedOn }: { basedOn: ReflectBasedOn }) {
                   <span>{f.text}</span>
                 </div>
                 {f.context ? (
-                  <p className="text-[10px] text-[hsl(var(--vault-muted))] mt-1 ml-0">{f.context}</p>
+                  <p className="text-xs text-[hsl(var(--vault-muted))] mt-1 ml-0">{f.context}</p>
                 ) : null}
               </li>
             ))}
@@ -128,20 +129,20 @@ function ReflectProvenance({ basedOn }: { basedOn: ReflectBasedOn }) {
 
       {basedOn.directives.length > 0 ? (
         <div>
-          <p className="text-[10px] font-medium text-[hsl(var(--vault-muted))] mb-2">
+          <p className="text-xs font-medium text-[hsl(var(--vault-muted))] mb-2">
             Directives · {basedOn.directives.length}
           </p>
           <ul className="space-y-2">
             {basedOn.directives.map((d, i) => (
-              <li key={d.id ?? i} className="text-[12px] leading-relaxed pl-2 border-l-2 border-rose-300/60">
+              <li key={d.id ?? i} className="text-[12px] leading-relaxed pl-2 border-l-2 border-[hsl(var(--vault-border))]">
                 <div className="flex flex-wrap items-center gap-2">
                   <TypeBadge type="directive" />
                   {d.name ? (
-                    <span className="text-[11px] font-medium">{d.name}</span>
+                    <span className="text-xs font-medium">{d.name}</span>
                   ) : null}
                 </div>
                 {d.content ? (
-                  <p className="text-[11px] text-[hsl(var(--vault-muted))] mt-1 whitespace-pre-wrap">
+                  <p className="text-xs text-[hsl(var(--vault-muted))] mt-1 whitespace-pre-wrap">
                     {d.content}
                   </p>
                 ) : null}
@@ -172,6 +173,13 @@ function slugPlaybookId(query: string): string {
   )
 }
 
+function scoreLabel(score?: number): string {
+  if (score == null) return 'Match'
+  if (score >= 0.7) return 'High'
+  if (score >= 0.4) return 'Medium'
+  return 'Low'
+}
+
 function scoreTone(score?: number) {
   if (score == null) return 'bg-[hsl(var(--secondary))] text-[hsl(var(--vault-muted))] border-border'
   if (score >= 0.7) return 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-fg))] border-[hsl(var(--success-border))]'
@@ -199,15 +207,16 @@ function RecallResultCard({
       <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
         <Badge
           variant="outline"
-          className={cn('text-[10px] font-normal border', scoreTone(memory.score))}
+          className={cn('text-xs font-normal border', scoreTone(memory.score))}
+          title={scoreLabel(memory.score)}
         >
-          {memory.score != null ? `Score ${memory.score.toFixed(2)}` : 'Match'}
+          {memory.score != null ? `${scoreLabel(memory.score)} ${memory.score.toFixed(2)}` : 'Match'}
         </Badge>
         {memory.type ? (
           <Badge
             variant="outline"
             className={cn(
-              'text-[10px] capitalize font-normal border',
+              'text-xs capitalize font-normal border',
               factTypeStyle(memory.type).badge
             )}
           >
@@ -220,7 +229,7 @@ function RecallResultCard({
       {memory.entities?.length ? (
         <div className="flex flex-wrap gap-1 mt-2">
           {memory.entities.map((e) => (
-            <Badge key={e} variant="secondary" className="text-[10px] font-normal">
+            <Badge key={e} variant="secondary" className="text-xs font-normal">
               {e}
             </Badge>
           ))}
@@ -231,7 +240,7 @@ function RecallResultCard({
         {memory.documentId && onOpenDocument ? (
           <button
             type="button"
-            className="text-[10px] text-[hsl(var(--vault-active))] hover:underline min-h-[44px] flex items-center"
+            className="text-xs text-[hsl(var(--vault-active))] hover:underline min-h-[44px] flex items-center"
             onClick={() => onOpenDocument(memory.documentId!)}
           >
             {truncateDocumentLabel(documentDisplayName(memory.documentId))}
@@ -240,8 +249,9 @@ function RecallResultCard({
         {memory.chunkText ? (
           <button
             type="button"
-            className="text-[10px] text-[hsl(var(--vault-muted))] hover:text-[hsl(var(--vault-active))] min-h-[44px]"
+            className="text-xs text-[hsl(var(--vault-muted))] hover:text-[hsl(var(--vault-active))] min-h-[44px]"
             onClick={() => onToggleDocExpand(`chunk:${key}`)}
+            aria-expanded={showChunk}
           >
             {showChunk ? 'Hide context' : 'Show context'}
           </button>
@@ -249,8 +259,9 @@ function RecallResultCard({
         {memory.type === 'observation' && memory.sourceFacts?.length ? (
           <button
             type="button"
-            className="text-[10px] text-[hsl(var(--vault-muted))] hover:text-[hsl(var(--vault-active))] min-h-[44px]"
+            className="text-xs text-[hsl(var(--vault-muted))] hover:text-[hsl(var(--vault-active))] min-h-[44px]"
             onClick={() => onToggleDocExpand(`sources:${key}`)}
+            aria-expanded={showSources}
           >
             {showSources ? 'Hide evidence' : `Evidence (${memory.sourceFacts.length})`}
           </button>
@@ -258,10 +269,10 @@ function RecallResultCard({
       </div>
 
       {showChunk && memory.chunkText ? (
-        <blockquote className="mt-2 pl-2 border-l-2 border-[hsl(var(--vault-active))]/40 text-[11px] text-[hsl(var(--vault-muted))] leading-relaxed whitespace-pre-wrap">
+        <blockquote className="mt-2 pl-2 border-l-2 border-[hsl(var(--vault-active))]/40 text-xs text-[hsl(var(--vault-muted))] leading-relaxed whitespace-pre-wrap">
           {memory.chunkText}
           {memory.chunkTruncated ? (
-            <span className="block mt-1 text-[10px] opacity-70">Truncated</span>
+            <span className="block mt-1 text-xs opacity-70">Truncated</span>
           ) : null}
         </blockquote>
       ) : null}
@@ -269,7 +280,7 @@ function RecallResultCard({
       {showSources && memory.sourceFacts?.length ? (
         <ul className="mt-2 space-y-1.5 pl-2 border-l border-border">
           {memory.sourceFacts.map((sf, i) => (
-            <li key={sf.id ?? i} className="text-[11px] text-[hsl(var(--vault-muted))]">
+            <li key={sf.id ?? i} className="text-xs text-[hsl(var(--vault-muted))]">
               {sf.content}
               {sf.documentId && onOpenDocument ? (
                 <>
@@ -441,25 +452,25 @@ export function SearchPanel({
     <section>
       <div className="px-5 py-3 border-b border-border">
         <h1 className="text-[13px] font-medium tracking-tight">Query</h1>
-        <p className="text-[11px] text-[hsl(var(--vault-muted))] mt-0.5">
+        <p className="text-xs text-[hsl(var(--vault-muted))] mt-0.5">
           {teamLabel ?? bankId}
         </p>
       </div>
 
       <div className="p-5">
         {error ? (
-          <p className="text-[11px] text-[hsl(var(--error-fg))] mb-3">{error}</p>
+          <p className="text-xs text-[hsl(var(--error-fg))] mb-3">{error}</p>
         ) : null}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="bg-[hsl(var(--secondary))] p-0.5 min-h-[44px]">
-            <TabsTrigger value="recall" className="text-[11px] data-[state=active]:bg-[hsl(var(--canvas))]">
+            <TabsTrigger value="recall" className="text-xs data-[state=active]:bg-[hsl(var(--canvas))]">
               Recall
             </TabsTrigger>
-            <TabsTrigger value="reflect" className="text-[11px] data-[state=active]:bg-[hsl(var(--canvas))]">
+            <TabsTrigger value="reflect" className="text-xs data-[state=active]:bg-[hsl(var(--canvas))]">
               Reflect
             </TabsTrigger>
           </TabsList>
-          <p className="text-[11px] text-[hsl(var(--vault-muted))] mt-2 leading-relaxed">
+          <p className="text-xs text-[hsl(var(--vault-muted))] mt-2 leading-relaxed">
             {activeTab === 'recall'
               ? 'Find specific facts with source links and context.'
               : 'Synthesized answer from memories, mental models, and directives.'}
@@ -469,14 +480,16 @@ export function SearchPanel({
 
           <TabsContent value="recall" className="mt-4 space-y-3">
             <div className="flex gap-2">
+              <label htmlFor="recall-query" className="sr-only">Search query</label>
               <Input
+                id="recall-query"
                 value={recallQuery}
                 onChange={(e) => setRecallQuery(e.target.value)}
                 placeholder="What do we know about MegaCorp?"
                 className="min-h-[44px] text-[12px]"
                 onKeyDown={(e) => e.key === 'Enter' && handleRecall()}
               />
-              <Button onClick={handleRecall} disabled={loading} className="shrink-0 min-h-[44px] text-[11px] px-3">
+              <Button onClick={handleRecall} disabled={loading} className="shrink-0 min-h-[44px] text-xs px-3">
                 {loading ? <Spinner /> : 'Search'}
               </Button>
             </div>
@@ -516,14 +529,16 @@ export function SearchPanel({
 
           <TabsContent value="reflect" className="mt-4 space-y-3">
             <div className="flex gap-2">
+              <label htmlFor="reflect-query" className="sr-only">Ask a question</label>
               <Input
+                id="reflect-query"
                 value={reflectQuery}
                 onChange={(e) => setReflectQuery(e.target.value)}
                 placeholder="Summarize Q3 risks and who owns each…"
                 className="min-h-[44px] text-[12px]"
                 onKeyDown={(e) => e.key === 'Enter' && handleReflect()}
               />
-              <Button onClick={handleReflect} disabled={loading} className="shrink-0 min-h-[44px] text-[11px] px-3">
+              <Button onClick={handleReflect} disabled={loading} className="shrink-0 min-h-[44px] text-xs px-3">
                 {loading ? <Spinner /> : 'Ask'}
               </Button>
             </div>
@@ -531,7 +546,7 @@ export function SearchPanel({
               <div className="space-y-3">
                 <div className="rounded-sm border border-border bg-[hsl(var(--canvas))] p-4">
                   <div className="flex items-start justify-between gap-2 mb-2">
-                    <p className="text-[10px] font-medium text-[hsl(var(--vault-muted))] uppercase tracking-widest">
+                    <p className="text-xs font-medium text-[hsl(var(--vault-muted))] uppercase tracking-widest">
                       Answer
                     </p>
                     {canManagePlaybooks ? (
@@ -539,7 +554,7 @@ export function SearchPanel({
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="text-[10px] min-h-[44px] shrink-0"
+                        className="text-xs min-h-[44px] shrink-0"
                         disabled={savingPlaybook}
                         onClick={handleSavePlaybook}
                       >
@@ -547,12 +562,14 @@ export function SearchPanel({
                       </Button>
                     ) : null}
                   </div>
-                  <p className="text-[13px] whitespace-pre-wrap leading-relaxed">{reflectResult}</p>
+                  <div className="prose prose-sm prose-slate max-w-none">
+                    <MarkdownPreview source={reflectResult} />
+                  </div>
                 </div>
                 {playbookMessage ? (
                   <p
                     className={cn(
-                      'text-[11px] px-2',
+                      'text-xs px-2',
                       playbookMessage.includes('failed')
                         ? 'text-[hsl(var(--error-fg))]'
                         : 'text-[hsl(var(--success-fg))]'

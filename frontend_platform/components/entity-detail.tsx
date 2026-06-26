@@ -69,6 +69,32 @@ export function EntityDetail({
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
 
+  // ponytail: simple focus trap — cycles focus within the panel
+  // upgrade path: use a proper focus-trap library if more panels need it
+  useEffect(() => {
+    const panel = document.querySelector('[role="dialog"][aria-label^="Entity:"]') as HTMLElement | null
+    if (!panel) return
+    const focusable = panel.querySelectorAll<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    )
+    const first = focusable[0]
+    const last = focusable[focusable.length - 1]
+    if (!first || !last) return
+
+    const trap = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault()
+        last.focus()
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault()
+        first.focus()
+      }
+    }
+    panel.addEventListener('keydown', trap)
+    return () => panel.removeEventListener('keydown', trap)
+  }, [detail])
+
   const load = useCallback(async () => {
     setLoading(true)
     setError(null)
@@ -170,13 +196,13 @@ export function EntityDetail({
         <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
           <div className="min-w-0 flex-1">
             <h2 className="text-[13px] font-medium truncate">{title}</h2>
-            <p className="text-[11px] text-[hsl(var(--vault-muted))] mt-0.5">Entity detail</p>
+            <p className="text-xs text-[hsl(var(--vault-muted))] mt-0.5">Entity detail</p>
           </div>
           <Button
             ref={closeRef}
             variant="ghost"
             size="sm"
-            className="min-h-[44px] text-[11px]"
+            className="min-h-[44px] text-xs"
             onClick={onClose}
           >
             Close
@@ -191,18 +217,18 @@ export function EntityDetail({
         ) : error ? (
           <div className="p-4">
             <p className="text-[12px] text-[hsl(var(--error-fg))]">{error}</p>
-            <Button variant="outline" size="sm" className="mt-3 min-h-[44px] text-[11px]" onClick={load}>
+            <Button variant="outline" size="sm" className="mt-3 min-h-[44px] text-xs" onClick={load}>
               Retry
             </Button>
           </div>
         ) : detail ? (
           <div className="p-4 space-y-5">
             <div className="flex flex-wrap gap-2">
-              <Badge variant="secondary" className="text-[10px] font-normal">
+              <Badge variant="secondary" className="text-xs font-normal">
                 {detail.mention_count} mentions
               </Badge>
               {detail.last_seen ? (
-                <span className="text-[10px] text-[hsl(var(--vault-muted))]">
+                <span className="text-xs text-[hsl(var(--vault-muted))]">
                   Last seen {new Date(detail.last_seen).toLocaleDateString()}
                 </span>
               ) : null}
@@ -210,7 +236,7 @@ export function EntityDetail({
 
             {detail.observations.length > 0 ? (
               <section>
-                <h3 className="text-[10px] font-medium uppercase tracking-widest text-[hsl(var(--vault-muted))] mb-2">
+                <h3 className="text-xs font-medium uppercase tracking-widest text-[hsl(var(--vault-muted))] mb-2">
                   Observations
                 </h3>
                 <ul className="space-y-2">
@@ -227,11 +253,11 @@ export function EntityDetail({
             ) : null}
 
             <section>
-              <h3 className="text-[10px] font-medium uppercase tracking-widest text-[hsl(var(--vault-muted))] mb-2">
+              <h3 className="text-xs font-medium uppercase tracking-widest text-[hsl(var(--vault-muted))] mb-2">
                 Related facts · {facts.length}
               </h3>
               {facts.length === 0 ? (
-                <p className="text-[11px] text-[hsl(var(--vault-muted))]">No recall hits for this entity.</p>
+                <p className="text-xs text-[hsl(var(--vault-muted))]">No recall hits for this entity.</p>
               ) : (
                 <ul className="space-y-2">
                   {facts.map((f, i) => {
@@ -248,7 +274,7 @@ export function EntityDetail({
                             <Badge
                               variant="outline"
                               className={cn(
-                                'text-[10px] capitalize font-normal border',
+                                'text-xs capitalize font-normal border',
                                 factTypeStyle(f.type).badge
                               )}
                             >
@@ -258,7 +284,7 @@ export function EntityDetail({
                           {f.documentId && onOpenDocument ? (
                             <button
                               type="button"
-                              className="text-[10px] text-[hsl(var(--vault-active))] hover:underline"
+                              className="text-xs text-[hsl(var(--vault-active))] hover:underline"
                               onClick={() =>
                                 onOpenDocument(f.documentId!, f.chunkText)
                               }
@@ -269,7 +295,7 @@ export function EntityDetail({
                           {f.chunkText ? (
                             <button
                               type="button"
-                              className="text-[10px] text-[hsl(var(--vault-muted))] hover:text-[hsl(var(--vault-active))]"
+                              className="text-xs text-[hsl(var(--vault-muted))] hover:text-[hsl(var(--vault-active))]"
                               onClick={() => toggleChunk(key)}
                             >
                               {showChunk ? 'Hide context' : 'Show context'}
@@ -277,10 +303,10 @@ export function EntityDetail({
                           ) : null}
                         </div>
                         {showChunk && f.chunkText ? (
-                          <blockquote className="mt-2 pl-2 border-l-2 border-[hsl(var(--vault-active))]/40 text-[11px] text-[hsl(var(--vault-muted))] leading-relaxed whitespace-pre-wrap">
+                          <blockquote className="mt-2 pl-2 border-l-2 border-[hsl(var(--vault-active))]/40 text-xs text-[hsl(var(--vault-muted))] leading-relaxed whitespace-pre-wrap">
                             {f.chunkText}
                             {f.chunkTruncated ? (
-                              <span className="block mt-1 text-[10px] opacity-70">Truncated</span>
+                              <span className="block mt-1 text-xs opacity-70">Truncated</span>
                             ) : null}
                           </blockquote>
                         ) : null}
@@ -292,11 +318,11 @@ export function EntityDetail({
             </section>
 
             <section>
-              <h3 className="text-[10px] font-medium uppercase tracking-widest text-[hsl(var(--vault-muted))] mb-2">
+              <h3 className="text-xs font-medium uppercase tracking-widest text-[hsl(var(--vault-muted))] mb-2">
                 Sources · {sourceGroups.length}
               </h3>
               {sourceGroups.length === 0 ? (
-                <p className="text-[11px] text-[hsl(var(--vault-muted))]">No linked source documents.</p>
+                <p className="text-xs text-[hsl(var(--vault-muted))]">No linked source documents.</p>
               ) : (
                 <ul className="space-y-1.5">
                   {sourceGroups.map(({ documentId, facts: groupFacts }) => (
@@ -309,7 +335,7 @@ export function EntityDetail({
                         <span className="text-[12px] font-medium block truncate">
                           {documentDisplayName(documentId)}
                         </span>
-                        <span className="text-[10px] text-[hsl(var(--vault-muted))]">
+                        <span className="text-xs text-[hsl(var(--vault-muted))]">
                           {groupFacts.length} fact{groupFacts.length === 1 ? '' : 's'}
                         </span>
                       </button>
