@@ -136,6 +136,8 @@ export async function recallForScope(
     includeSourceFacts?: boolean
     maxChunkTokens?: number
     scenarioId?: string | null
+    queryTimestamp?: string
+    trace?: boolean
   }
 ) {
   const filtered = scopeTagsForQuery(scope, options?.scenarioId)
@@ -148,6 +150,8 @@ export async function recallForScope(
     includeEntities: options?.includeEntities ?? true,
     includeSourceFacts: options?.includeSourceFacts ?? true,
     maxChunkTokens: options?.maxChunkTokens ?? 4096,
+    queryTimestamp: options?.queryTimestamp,
+    trace: options?.trace,
   })
 }
 
@@ -164,6 +168,25 @@ export async function reflectForScope(
     budget,
     includeFacts: true,
   })
+}
+
+export async function getMemoriesTimeseriesForBank(
+  bankId: string,
+  options?: {
+    period?: '7d' | '30d' | '90d'
+    timeField?: 'created_at' | 'occurred_start' | 'mentioned_at'
+  }
+) {
+  const { data, error } = await sdk.getMemoriesTimeseries({
+    client: getSdk(),
+    path: { bank_id: bankId },
+    query: {
+      period: options?.period ?? '30d',
+      time_field: options?.timeField ?? 'created_at',
+    },
+  })
+  if (error) throw new Error(String(error))
+  return data
 }
 
 export async function getBankConfig(bankId: string) {

@@ -110,7 +110,7 @@ Server-wide env vars: [configuration.md](./developer/configuration.md) (2000+ li
 | Text retain | `retain` + tags/metadata |
 | File upload | `retainFiles` (markitdown/iris) |
 | Attach / continue source | `retain` / `retainFiles` with same `document_id` |
-| Search / recall | `recall` with tag scope + `include.chunks/entities/source_facts` |
+| Search / recall | `recall` with tag scope + `include.chunks/entities/source_facts` + optional `queryTimestamp` |
 | Reflect panel | `reflect` + `include.facts` |
 | Stats panel | `getAgentStats` |
 | Bank config panel | `getBankConfig` / `updateBankConfig` |
@@ -119,6 +119,7 @@ Server-wide env vars: [configuration.md](./developer/configuration.md) (2000+ li
 | Document tags | `updateDocument` (tags only) |
 | Export JSON | `exportDocuments` |
 | Export wiki (OKF) | `listDocuments` + `getDocument` + `listMemories` + `listEntities` |
+| Timeline | `getMemoriesTimeseries` (period + time_field) |
 
 ### Ingestion quality (Phase 4 — implemented)
 

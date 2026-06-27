@@ -449,15 +449,8 @@ export function SearchPanel({
   }
 
   return (
-    <section>
-      <div className="px-5 py-3 border-b border-border">
-        <h1 className="text-[13px] font-medium tracking-tight">Query</h1>
-        <p className="text-xs text-[hsl(var(--vault-muted))] mt-0.5">
-          {teamLabel ?? bankId}
-        </p>
-      </div>
-
-      <div className="p-5">
+    <section className="flex flex-col flex-1 min-h-0">
+      <div className="p-4 sm:p-5">
         {error ? (
           <p className="text-xs text-[hsl(var(--error-fg))] mb-3">{error}</p>
         ) : null}

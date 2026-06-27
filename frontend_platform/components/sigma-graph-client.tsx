@@ -134,8 +134,8 @@ function SigmaGraphInner({
       iterations: 300,
       settings: {
         ...sensible,
-        gravity: 0.05,
-        scalingRatio: 8,
+        gravity: 0.04,
+        scalingRatio: 14,
         strongGravityMode: true,
         slowDown: 2,
         barnesHutOptimize: true,
@@ -149,6 +149,12 @@ function SigmaGraphInner({
     sigma?.refresh()
     setLayoutDone(true)
   }, [nodes, links, loadGraph, sigma])
+
+  // Fit graph to canvas after layout so nodes use the viewport (ponytail: camera reset, not bigger container)
+  useEffect(() => {
+    if (!sigma || !layoutDone) return
+    sigma.getCamera().animatedReset({ duration: 400 })
+  }, [sigma, layoutDone, nodes.length, links.length])
 
   // Update node/edge visuals when focus/hover/search changes
   useEffect(() => {

@@ -180,16 +180,10 @@ export function KnowledgeGraph({
   }, [])
 
   return (
-    <section className="flex flex-col flex-1 min-h-0">
-      <div className="flex flex-wrap items-center gap-3 px-5 py-3 border-b border-border bg-[hsl(var(--card))]">
-        <div className="min-w-0 flex-1">
-          <h1 className="text-[13px] font-medium tracking-tight">Knowledge browser</h1>
-          <p className="text-xs text-[hsl(var(--vault-muted))] mt-0.5">
-            Read linked wiki pages or explore the visual graph
-          </p>
-        </div>
+    <section className="flex flex-col flex-1 min-h-0 overflow-hidden">
+      <div className="flex flex-wrap items-center gap-2 px-4 py-1.5 border-b border-border bg-[hsl(var(--card))] sm:px-5 shrink-0">
         <div
-          className="inline-flex rounded-sm border border-border overflow-hidden"
+          className="inline-flex rounded-md border border-border overflow-hidden"
           role="tablist"
           aria-label="Knowledge browser mode"
         >
@@ -206,7 +200,7 @@ export function KnowledgeGraph({
               aria-selected={mode === id}
               onClick={() => setMode(id)}
               className={cn(
-                'min-h-[44px] px-4 text-xs font-medium',
+                'h-9 px-3 text-xs font-medium',
                 mode === id
                   ? 'bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))]'
                   : 'text-[hsl(var(--vault-muted))] hover:text-foreground'
@@ -216,6 +210,35 @@ export function KnowledgeGraph({
             </button>
           ))}
         </div>
+        {mode === 'graph' && nodes.length > 0 ? (
+          <span className="text-xs text-[hsl(var(--vault-muted))] tabular-nums">
+            {nodes.length} nodes · {links.length} links
+          </span>
+        ) : null}
+        {mode === 'graph' ? (
+          <>
+            <label htmlFor="graph-search" className="sr-only">Find node</label>
+            <input
+              id="graph-search"
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Find node…"
+              className="h-9 w-36 text-xs rounded-md border border-border bg-[hsl(var(--canvas))] px-2 focus:outline-none focus:ring-1 focus:ring-[hsl(var(--vault-active))]"
+            />
+            {selected ? (
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="ml-auto h-9 text-xs shrink-0"
+                onClick={showFullGraph}
+              >
+                Fit graph
+              </Button>
+            ) : null}
+          </>
+        ) : null}
       </div>
 
       {mode === 'wiki' ? (
@@ -229,64 +252,25 @@ export function KnowledgeGraph({
           />
         </div>
       ) : (
-        <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-          <div className="flex items-center gap-3 px-5 py-2 border-b border-border bg-[hsl(var(--vault))]/40">
-            {LEGEND.map(({ type, label }) => (
-              <span key={type} className="inline-flex items-center gap-1.5 text-xs text-[hsl(var(--vault-muted))]">
-                <span
-                  className="w-2.5 h-2.5 rounded-full shrink-0"
-                  style={{ backgroundColor: WIKI_GRAPH_COLORS[type] }}
-                  aria-hidden
-                />
-                {label}
-              </span>
-            ))}
-            <div className="w-px h-3 bg-border" aria-hidden />
-            <label htmlFor="graph-search" className="sr-only">Find node</label>
-            <input
-              id="graph-search"
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Find node…"
-              className="w-28 text-xs rounded-md border border-border bg-[hsl(var(--canvas))] px-2 py-1 focus:outline-none focus:ring-1 focus:ring-[hsl(var(--vault-active))]"
-            />
-            {nodes.length > 0 ? (
-              <span className="text-xs text-[hsl(var(--vault-muted))] tabular-nums">
-                {nodes.length} pages · {links.length} links
-              </span>
-            ) : null}
-            {selected ? (
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                className="ml-auto text-xs shrink-0"
-                onClick={showFullGraph}
-              >
-                Show full graph
-              </Button>
-            ) : null}
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_minmax(280px,34%)] flex-1 min-h-0 overflow-hidden">
-            <div className="relative min-h-0 overflow-hidden border-b lg:border-b-0 lg:border-r border-border bg-[hsl(var(--canvas))]">
-              {graphBusy ? (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Spinner className="size-6" />
-                </div>
-              ) : wikiError ? (
-                <div className="absolute inset-0 flex items-center justify-center text-[12px] text-[hsl(var(--error-fg))] px-4 text-center">
-                  {wikiError}
-                </div>
-              ) : graphEmpty ? (
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-center px-6">
-                  <p className="text-[12px] text-[hsl(var(--vault-muted))]">No graph yet</p>
-                  <p className="text-xs text-[hsl(var(--vault-muted))] max-w-xs opacity-80">
-                    Retain team sources and facts. Wiki pages and their links become the graph.
-                  </p>
-                </div>
-              ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_260px] flex-1 min-h-0 overflow-hidden">
+          <div className="relative flex-1 min-h-0 h-full overflow-hidden bg-[hsl(var(--canvas))]">
+            {graphBusy ? (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Spinner className="size-6" />
+              </div>
+            ) : wikiError ? (
+              <div className="absolute inset-0 flex items-center justify-center text-xs text-[hsl(var(--error-fg))] px-4 text-center">
+                {wikiError}
+              </div>
+            ) : graphEmpty ? (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-center px-6">
+                <p className="text-sm text-[hsl(var(--vault-muted))]">No graph yet</p>
+                <p className="text-xs text-[hsl(var(--vault-muted))] max-w-sm opacity-80">
+                  Retain team sources and facts. Wiki pages and their links become the graph.
+                </p>
+              </div>
+            ) : (
+              <>
                 <SigmaGraphClient
                   nodes={nodes}
                   links={links}
@@ -300,10 +284,29 @@ export function KnowledgeGraph({
                   neighborIds={neighborIds}
                   fitToken={fitToken}
                 />
-              )}
-            </div>
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 px-3 py-2 text-[11px] text-[hsl(var(--vault-muted))] bg-gradient-to-t from-[hsl(var(--canvas))] to-transparent">
+                  <span className="tabular-nums">
+                    {nodes.length} nodes · {links.length} links
+                    {selected ? ' · click canvas to reset' : ''}
+                  </span>
+                  <span className="hidden sm:flex flex-wrap gap-2">
+                    {LEGEND.map(({ type, label }) => (
+                      <span key={type} className="inline-flex items-center gap-1">
+                        <span
+                          className="w-2 h-2 rounded-full shrink-0"
+                          style={{ backgroundColor: WIKI_GRAPH_COLORS[type] }}
+                          aria-hidden
+                        />
+                        {label}
+                      </span>
+                    ))}
+                  </span>
+                </div>
+              </>
+            )}
+          </div>
 
-            <aside className="bg-[hsl(var(--canvas))] p-4 flex flex-col gap-3 min-h-0 overflow-y-auto border-l border-border">
+          <aside className="hidden lg:flex bg-[hsl(var(--canvas))] p-3 flex-col gap-2 min-h-0 overflow-y-auto border-l border-border">
               <div className="flex items-center justify-between gap-2">
                 <p className="text-xs font-medium text-[hsl(var(--vault-muted))] uppercase tracking-widest">
                   Preview
@@ -365,13 +368,11 @@ export function KnowledgeGraph({
                   </div>
                 </>
               ) : (
-                <p className="text-sm text-[hsl(var(--vault-muted))] leading-relaxed">
-                  Click a node to preview its page and highlight neighbors. Click empty canvas or{' '}
-                  <span className="font-medium text-foreground">Show full graph</span> to zoom back out.
+                <p className="text-xs text-[hsl(var(--vault-muted))] leading-relaxed">
+                  Click a node for preview. Double-click background or Fit graph to zoom out.
                 </p>
               )}
-            </aside>
-          </div>
+          </aside>
         </div>
       )}
     </section>

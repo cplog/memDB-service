@@ -39,9 +39,11 @@ Markdown rendering via `@uiw/react-md-editor` preview only (Sources reader — u
 | Sources replace | POST `/api/upload` + `documentId` | `retainFiles` upsert on same id |
 | Sources edit | PUT `/api/documents/:id` + `{ content }` | `retain` upsert (`updateMode: replace`) |
 | Knowledge | GET `/api/memories` | `listMemories` |
+| Knowledge sort/group | client-side by `eventTimeFromMemory` | `occurred_start` / `mentioned_at` / `created_at` |
+| Timeline | GET `/api/memories/timeseries` | `getMemoriesTimeseries` (period + time_field) |
 | Entity detail | GET `/api/entities/:id` | `getEntity` + recall with chunks |
 | Add note | POST `/api/retain` | `retain` + tags; append mode for attach |
-| Query recall | POST `/api/recall` | `recall` + `include.chunks/entities/source_facts` |
+| Query recall | POST `/api/recall` | `recall` + `include.chunks/entities/source_facts` + optional `queryTimestamp` |
 | Query reflect | POST `/api/reflect` | `reflect` + `include.facts` → `based_on` |
 | Graph Wiki | GET `/api/banks/:id/wiki` | Live OKF bundle (sources + entities + index) |
 | Graph Map | GET `/api/banks/:id/graph` | `getGraph` (native) + legacy fallback |
@@ -87,6 +89,8 @@ npm run check:scope
 npm run check:graph
 npm run check:recall
 npm run check:okf
+npm run check:retain
+npm run check:team-banks
 ```
 
 ## Hindsight agent docs

@@ -6,6 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Button } from '@/components/ui/button'
 import { ChevronIcon, DocIcon, TeamIcon } from './hindsight-icons'
 import { documentTreeLabels } from '@/lib/document-display'
+import { useScrambleOnHover } from '@/hooks/use-scramble-text'
 
 interface TreeNode {
   id: string
@@ -40,6 +41,29 @@ function collectBankIds(nodeList: TreeNode[]): string[] {
     if (node.children?.length) ids.push(...collectBankIds(node.children))
   }
   return ids
+}
+
+function ScrambleName({ name, className, animateOnMount = false }: { name: string; className?: string; animateOnMount?: boolean }) {
+  const { ref, scramble } = useScrambleOnHover({
+    text: name,
+    chars: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz',
+    cursor: '|',
+    revealRate: 60,
+    settleDuration: 400,
+    from: 'random',
+    duration: 800,
+    perturbation: 2,
+  })
+
+  useEffect(() => {
+    if (animateOnMount) scramble()
+  }, [animateOnMount, name, scramble])
+
+  return (
+    <div ref={ref} onMouseEnter={scramble} className={className}>
+      {name}
+    </div>
+  )
 }
 
 export function FileTree({
@@ -205,7 +229,7 @@ export function FileTree({
                   }}
                 >
                   <TeamIcon className="w-4 h-4 opacity-70 group-hover:opacity-100" />
-                  <span className="text-[13px] font-medium truncate flex-1">{bank.name}</span>
+                  <ScrambleName name={bank.name} className="text-[13px] font-medium truncate flex-1" />
                   {isLoading ? (
                     <span className="text-[11px] opacity-40">…</span>
                   ) : docs.length > 0 ? (
@@ -245,9 +269,7 @@ export function FileTree({
                           >
                             <DocIcon className={cn('w-3.5 h-3.5', isActive ? 'opacity-80' : 'opacity-50 group-hover:opacity-70')} />
                             <span className="min-w-0 flex-1">
-                              <span className="block text-[13px] leading-snug truncate">
-                                {doc.name}
-                              </span>
+                              <ScrambleName name={doc.name} className="block text-[13px] leading-snug truncate" animateOnMount />
                               <span className="flex items-center gap-1.5 mt-px">
                                 {showSubtitle ? (
                                   <span className="block text-[11px] leading-tight opacity-50 truncate">

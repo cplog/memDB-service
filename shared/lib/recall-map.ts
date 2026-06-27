@@ -17,6 +17,9 @@ export interface RecallMemoryItem {
   entities?: string[]
   sourceFactIds?: string[]
   sourceFacts?: RecallMemoryItem[]
+  occurredStart?: string | null
+  occurredEnd?: string | null
+  mentionedAt?: string | null
 }
 
 function mapOneResult(
@@ -41,6 +44,9 @@ function mapOneResult(
     chunkTruncated: chunk?.truncated,
     entities: r.entities ?? undefined,
     sourceFactIds,
+    occurredStart: r.occurred_start ?? null,
+    occurredEnd: r.occurred_end ?? null,
+    mentionedAt: r.mentioned_at ?? null,
   }
 
   if (sourceFactIds?.length) {
@@ -79,6 +85,9 @@ export function runRecallMapSelfCheck(): void {
         document_id: 'meeting-2024',
         entities: ['Alice'],
         type: 'world',
+        occurred_start: '2026-06-01T00:00:00Z',
+        occurred_end: '2026-06-02T00:00:00Z',
+        mentioned_at: '2026-06-03T00:00:00Z',
       },
     ],
     chunks: {
@@ -98,4 +107,7 @@ export function runRecallMapSelfCheck(): void {
   }
   if (m.documentId !== 'meeting-2024') throw new Error('recall map: document_id missing')
   if (!m.entities?.includes('Alice')) throw new Error('recall map: entities missing')
+  if (m.occurredStart !== '2026-06-01T00:00:00Z') throw new Error('recall map: occurred_start missing')
+  if (m.occurredEnd !== '2026-06-02T00:00:00Z') throw new Error('recall map: occurred_end missing')
+  if (m.mentionedAt !== '2026-06-03T00:00:00Z') throw new Error('recall map: mentioned_at missing')
 }

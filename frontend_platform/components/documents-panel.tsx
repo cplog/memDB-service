@@ -50,9 +50,7 @@ interface DocumentsPanelProps {
   selectedDocumentId?: string | null
   refreshToken?: number
   uploadOpen?: boolean
-  indexingPending?: number
   onSelectDocument?: (documentId: string | null) => void
-  onAddNote?: () => void
   onToggleUpload?: () => void
   onUploadComplete?: () => void
   onViewKnowledge?: () => void
@@ -80,9 +78,7 @@ export function DocumentsPanel({
   selectedDocumentId,
   refreshToken = 0,
   uploadOpen = false,
-  indexingPending = 0,
   onSelectDocument,
-  onAddNote,
   onToggleUpload,
   onUploadComplete,
   onViewKnowledge,
@@ -106,6 +102,19 @@ export function DocumentsPanel({
   const tagDraftList = useMemo(
     () => tagDraft.split(',').map((t) => t.trim()).filter(Boolean),
     [tagDraft]
+  )
+  const totalFacts = useMemo(
+    () => docs.reduce((sum, d) => sum + (d.memory_unit_count ?? 0), 0),
+    [docs]
+  )
+  const sortedDocs = useMemo(
+    () =>
+      docs.slice().sort((a, b) => {
+        const ta = a.updated_at ? new Date(a.updated_at).getTime() : 0
+        const tb = b.updated_at ? new Date(b.updated_at).getTime() : 0
+        return tb - ta
+      }),
+    [docs]
   )
   const factTypeBadges = useMemo(() => {
     if (!detail?.nodes_by_fact_type) return null
@@ -336,27 +345,29 @@ export function DocumentsPanel({
 
   return (
     <section className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
-      <div className="flex items-center gap-3 px-4 py-1.5 border-b bg-[hsl(var(--card))] sm:px-5">
-        <div className="min-w-0 flex-1 flex items-baseline gap-2">
+      <div className="flex items-center gap-2 px-4 py-1 border-b bg-[hsl(var(--card))] sm:px-5">
+        <div className="min-w-0 flex-1">
           <span className="text-sm font-medium tracking-tight">Sources</span>
-          <span className="text-xs text-[hsl(var(--vault-muted))] truncate">
-            {teamLabel ?? bankId}
-          </span>
+          {!activeId && !loadingList ? (
+            <p className="text-xs text-[hsl(var(--vault-muted))] tabular-nums leading-tight">
+              {docs.length} document{docs.length === 1 ? '' : 's'} · {totalFacts} facts
+            </p>
+          ) : null}
         </div>
-        {onToggleUpload ? (
+        {!activeId && onToggleUpload ? (
           <Button
             size="sm"
-            variant="secondary"
-            className="text-sm min-h-[36px]"
+            variant={uploadOpen ? 'outline' : 'secondary'}
+            className="text-sm min-h-9"
             onClick={onToggleUpload}
           >
-            {uploadOpen ? 'Close upload' : 'Upload'}
+            {uploadOpen ? 'Close' : 'Upload'}
           </Button>
         ) : null}
         <Button
           variant="ghost"
           size="sm"
-          className="text-sm min-h-[36px] text-[hsl(var(--vault-muted))]"
+          className="text-sm min-h-9 text-[hsl(var(--vault-muted))]"
           onClick={loadList}
           disabled={loadingList}
           aria-label="Refresh documents"
@@ -365,14 +376,8 @@ export function DocumentsPanel({
         </Button>
       </div>
 
-      {indexingPending > 0 ? (
-        <div className="px-6 py-2 bg-[hsl(var(--warning-bg))] border-b border-[hsl(var(--warning-border))] text-sm font-medium text-[hsl(var(--warning-fg))]">
-          Indexing {indexingPending} upload{indexingPending === 1 ? '' : 's'}. Processing — searchable in a few minutes.
-        </div>
-      ) : null}
-
       {uploadOpen ? (
-        <div className="px-6 py-4 border-b bg-[hsl(var(--secondary))]/30">
+        <div className="px-4 py-3 border-b bg-[hsl(var(--secondary))]/30 sm:px-5">
           <FileUpload
             variant="inline"
             bankId={bankId}
@@ -393,95 +398,40 @@ export function DocumentsPanel({
               </Button>
             </div>
           ) : !activeId ? (
-            <div className="flex flex-col h-full overflow-auto">
-              <div className="px-6 py-5 border-b bg-[hsl(var(--card))]">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium tracking-tight">{teamLabel ?? bankId}</p>
-                    <p className="text-xs text-[hsl(var(--vault-muted))] mt-0.5">
-                      {docs.length} document{docs.length === 1 ? '' : 's'} · {docs.reduce((sum, d) => sum + (d.memory_unit_count ?? 0), 0)} facts
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    {onToggleUpload ? (
-                      <Button size="sm" variant="secondary" className="text-sm h-8" onClick={onToggleUpload}>
-                        Upload
-                      </Button>
-                    ) : null}
-                    {onAddNote ? (
-                      <Button size="sm" variant="outline" className="text-sm h-8" onClick={onAddNote}>
-                        Add note
-                      </Button>
-                    ) : null}
-                  </div>
+            <div className="flex-1 min-h-0 overflow-auto px-4 py-2 sm:px-6">
+              {loadingList ? (
+                <div className="flex justify-center py-10">
+                  <Spinner className="w-5 h-5 text-[hsl(var(--vault-muted))]" />
                 </div>
-              </div>
-
-              <div className="flex-1 min-h-0 overflow-auto px-6 py-4">
-                {loadingList ? (
-                  <div className="flex justify-center py-12">
-                    <Spinner className="w-5 h-5 text-[hsl(var(--vault-muted))]" />
-                  </div>
-                ) : docs.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-16 text-center gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-[hsl(var(--secondary))] flex items-center justify-center">
-                      <svg viewBox="0 0 24 24" className="w-5 h-5 text-[hsl(var(--vault-muted))]" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
-                        <polyline points="14 2 14 8 20 8" />
-                      </svg>
-                    </div>
-                    <p className="text-sm text-[hsl(var(--vault-muted))]">No documents yet. Upload a file or add a note to get started.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <p className="text-[11px] font-medium uppercase tracking-wide text-[hsl(var(--vault-muted))] opacity-60 mb-3">
-                      Recent documents
-                    </p>
-                    {docs
-                      .slice()
-                      .sort((a, b) => {
-                        const ta = a.updated_at ? new Date(a.updated_at).getTime() : 0
-                        const tb = b.updated_at ? new Date(b.updated_at).getTime() : 0
-                        return tb - ta
-                      })
-                      .map((doc) => (
-                        <button
-                          key={doc.id}
-                          type="button"
-                          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] hover:bg-[hsl(var(--secondary))] transition-colors text-left group"
-                          onClick={() => onSelectDocument?.(doc.id)}
-                        >
-                          <div className="w-8 h-8 rounded-md bg-[hsl(var(--secondary))] flex items-center justify-center shrink-0">
-                            <svg viewBox="0 0 24 24" className="w-4 h-4 text-[hsl(var(--vault-muted))]" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
-                              <polyline points="14 2 14 8 20 8" />
-                            </svg>
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm font-medium text-foreground truncate group-hover:text-[hsl(var(--primary))]">
-                              {documentDisplayName(doc.id)}
-                            </p>
-                            <div className="flex items-center gap-2 mt-0.5">
-                              {doc.memory_unit_count != null && doc.memory_unit_count > 0 ? (
-                                <span className="text-[11px] text-[hsl(var(--vault-muted))]">
-                                  {doc.memory_unit_count} fact{doc.memory_unit_count === 1 ? '' : 's'}
-                                </span>
-                              ) : null}
-                              {doc.updated_at ? (
-                                <span className="text-[11px] text-[hsl(var(--vault-muted))] opacity-60">
-                                  {formatDate(doc.updated_at)}
-                                </span>
-                              ) : null}
-                            </div>
-                          </div>
-                          <svg viewBox="0 0 16 16" className="w-4 h-4 text-[hsl(var(--vault-muted))] opacity-0 group-hover:opacity-60 transition-opacity shrink-0" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-                            <path d="M6 4l4 4-4 4" />
-                          </svg>
-                        </button>
-                      ))}
-                  </div>
-                )}
-              </div>
+              ) : docs.length === 0 ? (
+                <p className="py-10 text-center text-sm text-[hsl(var(--vault-muted))]">
+                  No documents yet. Upload above or use Add note in the tab bar.
+                </p>
+              ) : (
+                <ul className="divide-y divide-[hsl(var(--border))]">
+                  {sortedDocs.map((doc) => (
+                    <li key={doc.id}>
+                      <button
+                        type="button"
+                        className="w-full flex items-baseline gap-3 py-2.5 text-left hover:bg-[hsl(var(--secondary))]/40 -mx-1 px-1 rounded-md group"
+                        onClick={() => onSelectDocument?.(doc.id)}
+                      >
+                        <span className="min-w-0 flex-1 text-sm font-medium truncate group-hover:text-[hsl(var(--primary))]">
+                          {documentDisplayName(doc.id)}
+                        </span>
+                        <span className="shrink-0 flex items-center gap-2 text-xs text-[hsl(var(--vault-muted))] tabular-nums">
+                          {doc.memory_unit_count != null && doc.memory_unit_count > 0 ? (
+                            <span>{doc.memory_unit_count} facts</span>
+                          ) : null}
+                          {doc.updated_at ? (
+                            <span className="hidden sm:inline">{formatDate(doc.updated_at)}</span>
+                          ) : null}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           ) : loadingDetail ? (
             <div className="flex justify-center py-24">

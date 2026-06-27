@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { MarkIcon, Spinner } from '@/components/hindsight-icons'
+import { useScrambleText } from '@/hooks/use-scramble-text'
 
 function LoginFieldsSkeleton() {
   return (
@@ -23,6 +24,16 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
+  const { ref: titleRef } = useScrambleText({
+    text: 'Crewio.ai Portal',
+    chars: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$_-',
+    cursor: '|',
+    revealRate: 50,
+    settleDuration: 800,
+    from: 'random',
+    duration: 2000,
+    perturbation: 4,
+  })
 
   useEffect(() => {
     setMounted(true)
@@ -60,7 +71,7 @@ export default function LoginPage() {
         <div className="flex items-center gap-2.5 mb-6">
           <MarkIcon className="size-5 text-[hsl(var(--vault-active))]" title="Crewio.ai" />
           <div>
-            <h1 className="text-[15px] font-medium tracking-tight">Crewio.ai Portal</h1>
+            <h1 ref={titleRef} className="text-[15px] font-medium tracking-tight">Crewio.ai Portal</h1>
             <p className="text-xs text-[hsl(var(--vault-muted))]">Sign in to your vault</p>
           </div>
         </div>

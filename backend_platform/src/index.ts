@@ -39,6 +39,7 @@ import {
   updateBankConfig,
   updateBankName,
   uploadFiles,
+  getMemoriesTimeseriesForBank,
 } from '../../shared/lib/hindsight.js'
 import { buildOkfWikiExport } from '../../shared/lib/okf-wiki.js'
 import {
@@ -333,11 +334,12 @@ app.post('/api/retain', async (c) => {
 
 app.post('/api/recall', async (c) => {
   const u = await user(c)
-  const { bankId, query, budget, scenarioId } = await c.req.json<{
+  const { bankId, query, budget, scenarioId, queryTimestamp } = await c.req.json<{
     bankId?: string
     query?: string
     budget?: string
     scenarioId?: string
+    queryTimestamp?: string
   }>()
   if (!bankId || !query?.trim()) {
     throw new HttpError(400, 'bankId and query required')
@@ -347,7 +349,7 @@ app.post('/api/recall', async (c) => {
     scope,
     query,
     budget === 'high' ? 'mid' : (budget as 'low' | 'mid') ?? 'mid',
-    { scenarioId }
+    { scenarioId, queryTimestamp }
   )
   return c.json({
     ...data,
@@ -356,6 +358,16 @@ app.post('/api/recall', async (c) => {
     entities: data.entities ?? null,
     source_facts: data.source_facts ?? null,
   })
+})
+
+app.get('/api/memories/timeseries', async (c) => {
+  const u = await user(c)
+  const bankId = c.req.query('bankId')
+  if (!bankId) throw new HttpError(400, 'bankId required')
+  requireScope(u, bankId)
+  const period = c.req.query('period') as '7d' | '30d' | '90d' | undefined
+  const timeField = c.req.query('timeField') as 'created_at' | 'occurred_start' | 'mentioned_at' | undefined
+  return c.json(await getMemoriesTimeseriesForBank(bankId, { period, timeField }))
 })
 
 app.post('/api/reflect', async (c) => {

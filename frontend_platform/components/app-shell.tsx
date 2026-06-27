@@ -8,7 +8,7 @@ import { KnowledgeGraph } from './knowledge-graph'
 import { MemoryEditor } from './memory-editor'
 import { SearchPanel } from './search-panel'
 import { StatsPanel } from './stats-panel'
-import { FileUpload } from './file-upload'
+import { TimelinePanel } from './timeline-panel'
 import { AdminSettings } from './admin-settings'
 import { ExportImport } from './export-import'
 import { DocumentsPanel } from './documents-panel'
@@ -26,6 +26,7 @@ import {
   isOpsView,
 } from '@/lib/workspace-mode'
 import { cn } from '@/lib/utils'
+import { useScramblePlaceholder } from '@/hooks/use-scramble-text'
 
 interface AppShellProps {
   user: {
@@ -41,8 +42,8 @@ interface AppShellProps {
 type ViewType =
   | 'sources'
   | 'knowledge'
+  | 'timeline'
   | 'editor'
-  | 'upload'
   | 'graph'
   | 'search'
   | 'stats'
@@ -53,8 +54,8 @@ type ViewType =
 const WORK_VIEWS: { id: ViewType; label: string }[] = [
   { id: 'sources', label: 'Sources' },
   { id: 'knowledge', label: 'Knowledge' },
+  { id: 'timeline', label: 'Timeline' },
   { id: 'editor', label: 'Add note' },
-  { id: 'upload', label: 'Upload' },
   { id: 'search', label: 'Query' },
   { id: 'graph', label: 'Graph' },
   { id: 'playground', label: 'API' },
@@ -90,6 +91,14 @@ export function AppShell({ user, teams }: AppShellProps) {
   const mode = workspaceMode(user.role)
   const modeMeta = MODE_META[mode]
   const isConsultant = user.role === 'consultant'
+
+  const placeholderPhrases = [
+    'Search documents…',
+    'Find by name…',
+    'Filter by tags…',
+    'Query your vault…',
+  ]
+  const { placeholder: scramblePlaceholder } = useScramblePlaceholder(placeholderPhrases, 4000)
 
   const activeTeam = teams.find((t) => teamBankId(t.id, cs) === activeBank)
   const activeBankLabel =
@@ -346,7 +355,7 @@ export function AppShell({ user, teams }: AppShellProps) {
               type="text"
               value={sidebarSearch}
               onChange={(e) => setSidebarSearch(e.target.value)}
-              placeholder="Search documents…"
+              placeholder={scramblePlaceholder}
               className="w-full h-8 pl-8 pr-2 text-[12px] rounded-md border border-[hsl(var(--vault-border))] bg-[hsl(var(--canvas))] text-foreground placeholder:text-[hsl(var(--vault-muted))] focus:outline-none focus:ring-1 focus:ring-[hsl(var(--vault-active))]"
             />
           </div>
@@ -431,13 +440,11 @@ export function AppShell({ user, teams }: AppShellProps) {
             ) : null}
           </div>
 
-          {!(activeView === 'sources' && selectedDocumentId) ? (
+          {isOpsView(activeView) ? (
           <div
             className={cn(
               'px-4 py-1.5 border-t border-border text-xs leading-relaxed',
-              isConsultant && isOpsView(activeView)
-                ? 'bg-[hsl(var(--mode-ops-muted))]/50 text-[hsl(var(--foreground))]/90'
-                : 'bg-[hsl(var(--secondary))]/30 text-[hsl(var(--vault-muted))]'
+              'bg-[hsl(var(--mode-ops-muted))]/50 text-[hsl(var(--foreground))]/90'
             )}
           >
             {scopeLine}
@@ -533,9 +540,7 @@ export function AppShell({ user, teams }: AppShellProps) {
               selectedDocumentId={selectedDocumentId}
               refreshToken={sourcesRefreshToken}
               uploadOpen={sourcesUploadOpen}
-              indexingPending={pendingOps}
               onSelectDocument={setSelectedDocumentId}
-              onAddNote={() => goToView('editor')}
               onToggleUpload={() => setSourcesUploadOpen((o) => !o)}
               onUploadComplete={handleUploadSuccess}
               onViewKnowledge={() => goToView('knowledge')}
@@ -554,6 +559,13 @@ export function AppShell({ user, teams }: AppShellProps) {
               onAddToDocument={addToDocument}
             />
           )}
+          {activeView === 'timeline' && (
+            <TimelinePanel
+              bankId={activeBank}
+              onSelectEntity={openEntity}
+              onOpenDocument={(docId) => openDocument(activeBank, docId)}
+            />
+          )}
           {activeView === 'editor' && (
             <div className="flex-1 min-h-0 overflow-auto">
               <div className="max-w-3xl mx-auto px-6 py-6">
@@ -562,18 +574,6 @@ export function AppShell({ user, teams }: AppShellProps) {
                 teamLabel={activeTeam?.label}
                 attachDocumentId={attachDocumentId}
                 onSave={handleOnSave}
-              />
-              </div>
-            </div>
-          )}
-          {activeView === 'upload' && (
-            <div className="flex-1 min-h-0 overflow-auto">
-              <div className="max-w-3xl mx-auto px-6 py-6">
-              <FileUpload
-                bankId={activeBank}
-                teamLabel={activeTeam?.label}
-                userRole={user.role}
-                onSuccess={handleUploadSuccess}
               />
               </div>
             </div>
@@ -589,7 +589,6 @@ export function AppShell({ user, teams }: AppShellProps) {
           )}
           {activeView === 'search' && (
             <div className="flex-1 min-h-0 overflow-auto">
-              <div className="max-w-3xl mx-auto px-6 py-6">
               <SearchPanel
                 bankId={activeBank}
                 teamLabel={activeTeam?.label}
@@ -597,7 +596,6 @@ export function AppShell({ user, teams }: AppShellProps) {
                 onOpenDocument={(docId) => openDocument(activeBank, docId)}
                 onBrowseSources={() => goToView('sources')}
               />
-              </div>
             </div>
           )}
           {activeView === 'stats' && (

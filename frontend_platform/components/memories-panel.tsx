@@ -212,7 +212,7 @@ export function MemoriesPanel({
     return (
       <div
         key={mem.id}
-        className="group rounded-lg border border-border bg-[hsl(var(--card))] px-5 py-4 hover:border-[hsl(var(--vault-active))]/30 hover:shadow-sm transition-all"
+        className="group py-3 border-b border-[hsl(var(--border))] last:border-b-0"
       >
         <ExpandableText
           text={mem.text ?? '(empty)'}
@@ -291,54 +291,50 @@ export function MemoriesPanel({
 
   return (
     <section className="flex flex-col flex-1 min-h-0">
-      <div className="px-6 py-5 border-b bg-[hsl(var(--card))]">
-        <div className="flex items-start gap-4">
-          <div className="min-w-0 flex-1">
-            <h1 className="text-lg font-medium tracking-tight">Knowledge</h1>
-            <p className="text-sm text-[hsl(var(--vault-muted))] mt-1">
-              {teamLabel ?? bankId}
-              {documentId ? ' · one document' : ` · ${total} facts`}
-            </p>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-sm text-[hsl(var(--vault-muted))]"
-            onClick={load}
-            disabled={loading}
-            aria-label="Refresh facts"
-          >
-            {loading ? <Spinner /> : 'Refresh'}
-          </Button>
-        </div>
-
-        {documentId && onAddToDocument ? (
-          <Button
-            variant="secondary"
-            size="sm"
-            className="mt-4 text-sm w-full sm:w-auto"
-            onClick={() => onAddToDocument(documentId)}
-          >
-            Add to this document
-          </Button>
-        ) : null}
-
-        <div className="flex gap-3 mt-5">
+      <div className="flex flex-wrap items-center gap-2 px-4 py-1.5 border-b bg-[hsl(var(--card))] sm:px-5">
+        <p className="text-xs text-[hsl(var(--vault-muted))] tabular-nums">
+          {documentId ? 'One document' : `${total} facts`}
+        </p>
+        <div className="flex gap-2 flex-1 min-w-[12rem] max-w-md ml-2">
           <Input
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && load()}
             placeholder="Filter facts…"
-            className="text-sm"
+            className="text-sm h-9"
             aria-label="Filter facts"
           />
-          <Button size="sm" className="px-4 shrink-0 text-sm" onClick={load} disabled={loading}>
+          <Button size="sm" className="shrink-0 text-sm h-9" onClick={load} disabled={loading}>
             Filter
           </Button>
         </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-sm text-[hsl(var(--vault-muted))] ml-auto min-h-9"
+          onClick={load}
+          disabled={loading}
+          aria-label="Refresh facts"
+        >
+          {loading ? <Spinner /> : 'Refresh'}
+        </Button>
+      </div>
 
-        {items.length > 0 ? (
-          <div className="flex flex-wrap items-center gap-2 mt-4">
+      {documentId && onAddToDocument ? (
+        <div className="px-4 py-2 border-b sm:px-5">
+          <Button
+            variant="secondary"
+            size="sm"
+            className="text-sm h-9"
+            onClick={() => onAddToDocument(documentId)}
+          >
+            Add to this document
+          </Button>
+        </div>
+      ) : null}
+
+      {items.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-2 px-4 py-2 border-b sm:px-5">
             <button
               type="button"
               onClick={() => setTypeFilter(null)}
@@ -388,7 +384,6 @@ export function MemoriesPanel({
             </div>
           </div>
         ) : null}
-      </div>
 
       <ScrollArea className="flex-1 min-h-0 bg-[hsl(var(--canvas))]">
         {loading ? (
@@ -441,7 +436,7 @@ export function MemoriesPanel({
             ) : null}
           </div>
         ) : groupedItems ? (
-          <div className="p-4 space-y-4">
+          <div className="px-4 sm:px-6 lg:px-8 py-2 space-y-5 w-full max-w-none">
             {groupedItems.map(([key, mems]) => (
               <div key={key}>
                 <div className="flex items-center gap-2 mb-2 px-1">
@@ -471,14 +466,14 @@ export function MemoriesPanel({
                     {mems.length} {mems.length === 1 ? 'fact' : 'facts'}
                   </span>
                 </div>
-                <div className="space-y-2">
+                <div className="divide-y divide-[hsl(var(--border))]">
                   {mems.map(renderFactCard)}
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <div className="p-4 space-y-2">
+          <div className="px-4 sm:px-6 lg:px-8 py-2 divide-y divide-[hsl(var(--border))] w-full max-w-none">
             {visibleItems.map(renderFactCard)}
           </div>
         )}
