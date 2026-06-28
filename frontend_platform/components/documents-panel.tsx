@@ -140,7 +140,7 @@ export function DocumentsPanel({
     try {
       const params = new URLSearchParams({ bankId, limit: '50' })
       const res = await fetch(`/api/documents?${params}`)
-      if (!res.ok) throw new Error(`Could not load documents (${res.status})`)
+      if (!res.ok) throw new Error(`Failed to load documents (${res.status})`)
       const data = await res.json()
       const items = (data.items ?? [])
         .map((row: Record<string, unknown>) => ({
@@ -154,7 +154,7 @@ export function DocumentsPanel({
         .filter((d: DocSummary) => d.id)
       setDocs(items)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not load documents')
+      setError(e instanceof Error ? e.message : 'Failed to load documents')
       setDocs([])
     } finally {
       setLoadingList(false)
@@ -175,11 +175,11 @@ export function DocumentsPanel({
           onSelectDocument?.(null)
           return
         }
-        if (!res.ok) throw new Error(`Could not open document (${res.status})`)
+        if (!res.ok) throw new Error(`Failed to open document (${res.status})`)
         setDetail(await res.json())
       } catch (e) {
         setDetail(null)
-        setError(e instanceof Error ? e.message : 'Could not open document')
+        setError(e instanceof Error ? e.message : 'Failed to open document')
       } finally {
         setLoadingDetail(false)
       }
@@ -245,7 +245,7 @@ export function DocumentsPanel({
       await loadDetail(activeId)
       await loadList()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not update tags')
+      setError(e instanceof Error ? e.message : 'Failed to update tags')
     } finally {
       setSavingTags(false)
     }
@@ -286,14 +286,14 @@ export function DocumentsPanel({
         body: JSON.stringify({ bankId, content: draft.trim() }),
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(String(data.error ?? `Save failed (${res.status})`))
+      if (!res.ok) throw new Error(String(data.error ?? `Failed to save (${res.status})`))
       setEditing(false)
       setSaveSuccess(true)
       await loadDetail(activeId)
       onUploadComplete?.()
       setTimeout(() => setSaveSuccess(false), 5000)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not save changes')
+      setError(e instanceof Error ? e.message : 'Failed to save changes')
     } finally {
       setSaving(false)
     }
@@ -313,7 +313,7 @@ export function DocumentsPanel({
       if (!res.ok) throw new Error(String(data.error ?? `Replace failed (${res.status})`))
       onUploadComplete?.()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not replace file')
+      setError(e instanceof Error ? e.message : 'Failed to replace file')
     } finally {
       setReplacing(false)
     }
@@ -330,14 +330,14 @@ export function DocumentsPanel({
         { method: 'DELETE' }
       )
       const data = await res.json()
-      if (!res.ok) throw new Error(String(data.error ?? `Delete failed (${res.status})`))
+      if (!res.ok) throw new Error(String(data.error ?? `Failed to delete (${res.status})`))
       setActiveId(null)
       setDetail(null)
       onSelectDocument?.(null)
       await loadList()
       onUploadComplete?.()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not delete document')
+      setError(e instanceof Error ? e.message : 'Failed to delete document')
     } finally {
       setDeleting(false)
     }
@@ -646,7 +646,7 @@ export function DocumentsPanel({
                   {editing ? (
                     <>
                       <p className="text-sm text-[hsl(var(--vault-muted))] mb-4 leading-relaxed">
-                        Editing rebuilds extracted facts. Searchable in a few minutes.
+                        Editing rebuilds extracted facts. They'll be searchable in a few minutes.
                       </p>
                       <Textarea
                         value={draft}

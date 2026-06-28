@@ -125,7 +125,7 @@ export function MemoryEditor({
       })
       const data = await res.json()
       if (!res.ok) {
-        setError(String(data.error ?? `Save failed (${res.status})`))
+        setError(String(data.error ?? `Failed to save (${res.status})`))
         return
       }
       setResult(data)
@@ -133,7 +133,7 @@ export function MemoryEditor({
       if (!useExisting) setNoteTitle('')
       onSave(false)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not save')
+      setError(e instanceof Error ? e.message : 'Failed to save')
     } finally {
       setLoading(false)
     }
@@ -190,7 +190,7 @@ export function MemoryEditor({
         <Input
           value={noteTitle}
           onChange={(e) => setNoteTitle(e.target.value)}
-          placeholder="Title or slug (required), e.g. Q3 planning 2024-03-15"
+          placeholder="Title (required), e.g. Q3 planning 2024-03-15"
           className="text-[12px] min-h-[44px]"
           required
         />

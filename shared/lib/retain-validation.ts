@@ -5,7 +5,7 @@ import { appendScenarioTag, normalizeScenarioId } from './scenario'
 
 /** Shown after retain/upload while async indexing runs. */
 export const RETAIN_PROCESSING_HINT =
-  'Processing — searchable in a few minutes.'
+  'Processing — results appear in a few minutes.'
 
 export class RetainValidationError extends Error {
   constructor(message: string) {

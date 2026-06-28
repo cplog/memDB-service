@@ -6,7 +6,6 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Button } from '@/components/ui/button'
 import { ChevronIcon, DocIcon, TeamIcon } from './hindsight-icons'
 import { documentTreeLabels } from '@/lib/document-display'
-import { useScrambleOnHover } from '@/hooks/use-scramble-text'
 
 interface TreeNode {
   id: string
@@ -43,27 +42,8 @@ function collectBankIds(nodeList: TreeNode[]): string[] {
   return ids
 }
 
-function ScrambleName({ name, className, animateOnMount = false }: { name: string; className?: string; animateOnMount?: boolean }) {
-  const { ref, scramble } = useScrambleOnHover({
-    text: name,
-    chars: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz',
-    cursor: '|',
-    revealRate: 60,
-    settleDuration: 400,
-    from: 'random',
-    duration: 800,
-    perturbation: 2,
-  })
-
-  useEffect(() => {
-    if (animateOnMount) scramble()
-  }, [animateOnMount, name, scramble])
-
-  return (
-    <div ref={ref} onMouseEnter={scramble} className={className}>
-      {name}
-    </div>
-  )
+function ScrambleName({ name, className }: { name: string; className?: string }) {
+  return <div className={className}>{name}</div>
 }
 
 export function FileTree({
@@ -219,7 +199,7 @@ export function FileTree({
                 <button
                   type="button"
                   className={cn(
-                    'w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-left transition-colors group',
+                    'w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-left group',
                     isActiveBank
                       ? 'text-[hsl(var(--vault-active))]'
                       : 'text-[hsl(var(--vault-muted))] hover:text-foreground hover:bg-[hsl(var(--secondary))]'
@@ -260,7 +240,7 @@ export function FileTree({
                           <button
                             type="button"
                             className={cn(
-                              'w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-left transition-colors',
+                              'w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-left',
                               isActive
                                 ? 'bg-[hsl(var(--accent))]/10 text-[hsl(var(--vault-active))] font-medium'
                                 : 'text-[hsl(var(--vault-muted))] hover:text-foreground hover:bg-[hsl(var(--secondary))]'
@@ -269,7 +249,7 @@ export function FileTree({
                           >
                             <DocIcon className={cn('w-3.5 h-3.5', isActive ? 'opacity-80' : 'opacity-50 group-hover:opacity-70')} />
                             <span className="min-w-0 flex-1">
-                              <ScrambleName name={doc.name} className="block text-[13px] leading-snug truncate" animateOnMount />
+                              <ScrambleName name={doc.name} className="block text-[13px] leading-snug truncate" />
                               <span className="flex items-center gap-1.5 mt-px">
                                 {showSubtitle ? (
                                   <span className="block text-[11px] leading-tight opacity-50 truncate">
@@ -291,7 +271,7 @@ export function FileTree({
                           </button>
                           {/* Delete button on hover */}
                           {onDeleteDocument && doc.bankId && doc.documentId ? (
-                            <div className="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100">
                               {isDeleting ? (
                                 <div className="flex items-center gap-1 bg-[hsl(var(--card))] border border-[hsl(var(--error-border))] rounded px-1.5 py-0.5">
                                   <span className="text-[10px] text-[hsl(var(--error-fg))]">Delete?</span>

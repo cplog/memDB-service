@@ -38,6 +38,8 @@
     "bcryptjs": "^2",
     "class-variance-authority": "^0.7",
     "clsx": "^2",
+    "cytoscape": "^3.34.0",
+    "cytoscape-fcose": "^2.2.0",
     "graphology": "^0.26.0",
     "graphology-layout": "^0.6.1",
     "graphology-layout-forceatlas2": "^0.10.1",

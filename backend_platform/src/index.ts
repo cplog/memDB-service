@@ -18,14 +18,18 @@ import {
   deleteDocumentForBank,
   getDocumentForBank,
   getEntityForBank,
+  getEntityGraphData,
   listBanks,
   listDocumentsForBank,
   listEntitiesForBank,
+  listTagsForBank,
+  listObservationScopesForBank,
   listMemoriesForBank,
   updateMemoryForBank,
   listMentalModelsForBank,
   createMentalModelForBank,
   getMentalModelForBank,
+  getMentalModelHistoryForBank,
   refreshMentalModelForBank,
   clearMentalModelForBank,
   updateMentalModelForBank,
@@ -334,12 +338,13 @@ app.post('/api/retain', async (c) => {
 
 app.post('/api/recall', async (c) => {
   const u = await user(c)
-  const { bankId, query, budget, scenarioId, queryTimestamp } = await c.req.json<{
+  const { bankId, query, budget, scenarioId, queryTimestamp, trace } = await c.req.json<{
     bankId?: string
     query?: string
     budget?: string
     scenarioId?: string
     queryTimestamp?: string
+    trace?: boolean
   }>()
   if (!bankId || !query?.trim()) {
     throw new HttpError(400, 'bankId and query required')
@@ -349,7 +354,7 @@ app.post('/api/recall', async (c) => {
     scope,
     query,
     budget === 'high' ? 'mid' : (budget as 'low' | 'mid') ?? 'mid',
-    { scenarioId, queryTimestamp }
+    { scenarioId, queryTimestamp, trace }
   )
   return c.json({
     ...data,
@@ -503,6 +508,15 @@ app.get('/api/mental-models/:mentalModelId', async (c) => {
   return c.json(await getMentalModelForBank(bankId, mentalModelId))
 })
 
+app.get('/api/mental-models/:mentalModelId/history', async (c) => {
+  const u = await user(c)
+  const bankId = c.req.query('bankId')
+  const mentalModelId = c.req.param('mentalModelId')
+  if (!bankId) throw new HttpError(400, 'bankId required')
+  requireScope(u, bankId)
+  return c.json(await getMentalModelHistoryForBank(bankId, mentalModelId))
+})
+
 app.patch('/api/mental-models/:mentalModelId', async (c) => {
   const u = await user(c)
   if (!canUpdateBankConfig(u)) throw new HttpError(403, 'Forbidden')
@@ -587,6 +601,41 @@ app.get('/api/entities/:entityId', async (c) => {
   const entity = await getEntityForBank(bankId, entityId)
   if (!entity) throw new HttpError(404, 'Entity not found')
   return c.json(entity)
+})
+
+app.get('/api/banks/:bankId/entities/graph', async (c) => {
+  const u = await user(c)
+  const bankId = c.req.param('bankId')
+  requireScope(u, bankId)
+  const limit = Math.min(Number(c.req.query('limit') || 200), 500)
+  const minCount = Number(c.req.query('minCount') || 1)
+  return c.json(await getEntityGraphData(bankId, { limit, minCount }))
+})
+
+app.get('/api/banks/:bankId/tags', async (c) => {
+  const u = await user(c)
+  const bankId = c.req.param('bankId')
+  requireScope(u, bankId)
+  const q = c.req.query('q') || undefined
+  const source = c.req.query('source') as 'memories' | 'mental_models' | undefined
+  const limit = Math.min(Number(c.req.query('limit') || 100), 200)
+  const offset = Number(c.req.query('offset') || 0)
+  return c.json(await listTagsForBank(bankId, { q, source, limit, offset }))
+})
+
+app.get('/api/banks/:bankId/observation-scopes', async (c) => {
+  const u = await user(c)
+  const bankId = c.req.param('bankId')
+  requireScope(u, bankId)
+  return c.json(await listObservationScopesForBank(bankId))
+})
+
+app.get('/api/banks/:bankId/profile', async (c) => {
+  const u = await user(c)
+  const bankId = c.req.param('bankId')
+  requireScope(u, bankId)
+  const profile = await getBankProfile(bankId).catch(() => null)
+  return c.json(profile ?? { bank_id: bankId, name: bankId })
 })
 
 app.post('/api/export-wiki', async (c) => {

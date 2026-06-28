@@ -42,7 +42,7 @@ export function Spinner({ className }: IconProps) {
   return (
     <span
       className={cn(
-        'inline-block size-3.5 rounded-full border-[1.5px] border-current border-r-transparent animate-spin',
+        'inline-block size-3.5 rounded-full border-[1.5px] border-current border-r-transparent',
         className
       )}
       aria-hidden

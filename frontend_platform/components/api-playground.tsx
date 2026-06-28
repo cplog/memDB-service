@@ -87,7 +87,7 @@ const ENDPOINTS: EndpointDef[] = [
     id: 'memories',
     method: 'GET',
     path: '/api/memories',
-    description: 'List memory units in a bank',
+    description: 'List facts in a bank',
     query: { bankId: 'team-product', limit: '50', offset: '0', documentId: '', q: '' },
   },
   {

@@ -5,34 +5,39 @@ import Graph from 'graphology'
 import { SigmaContainer, useLoadGraph, useRegisterEvents, useSetSettings, useSigma } from '@react-sigma/core'
 import '@react-sigma/core/lib/style.css'
 import forceAtlas2 from 'graphology-layout-forceatlas2'
-import { WIKI_GRAPH_COLORS } from '@/lib/workspace-colors'
+import {
+  GRAPH_SURFACE,
+  graphFactNodeColor,
+  graphLinkRgba,
+  graphNodeSize,
+} from '@/lib/workspace-colors'
 import type { WikiGraphNode } from '../../shared/lib/okf-wiki'
 
-const NODE_COLORS: Record<string, string> = {
-  source: WIKI_GRAPH_COLORS.source,
-  entity: WIKI_GRAPH_COLORS.entity,
-  index: WIKI_GRAPH_COLORS.index,
+type DisplayNode = WikiGraphNode & { factType?: string; fullText?: string }
+
+function nodeBaseColor(node: DisplayNode): string {
+  return graphFactNodeColor(node.factType, node.type)
 }
 
-const DIMMED_NODE_COLORS: Record<string, string> = {
-  source: 'rgba(249, 115, 22, 0.5)',
-  entity: 'rgba(59, 130, 246, 0.5)',
-  index: 'rgba(16, 185, 129, 0.5)',
+function fadeColor(hex: string, alpha: number): string {
+  if (hex.startsWith('rgba')) return hex
+  const r = parseInt(hex.slice(1, 3), 16)
+  const g = parseInt(hex.slice(3, 5), 16)
+  const b = parseInt(hex.slice(5, 7), 16)
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
 }
 
-const UNFOCUSED_NODE_COLORS: Record<string, string> = {
-  source: 'rgba(249, 115, 22, 0.35)',
-  entity: 'rgba(59, 130, 246, 0.35)',
-  index: 'rgba(16, 185, 129, 0.35)',
+function edgeBaseColor(linkType?: string, alpha = 0.62): string {
+  return graphLinkRgba(linkType, alpha)
 }
 
-const EDGE_COLOR = 'rgba(100, 116, 139, 0.5)'
-const EDGE_DIMMED_COLOR = 'rgba(100, 116, 139, 0.22)'
-const EDGE_ACTIVE_COLOR = 'rgba(16, 185, 129, 0.85)'
+function edgeActiveColor(linkType?: string): string {
+  return graphLinkRgba(linkType, 0.92)
+}
 
 interface SigmaGraphInnerProps {
-  nodes: WikiGraphNode[]
-  links: { source: string; target: string }[]
+  nodes: DisplayNode[]
+  links: { source: string; target: string; type?: string }[]
   onNodeClick: (node: WikiGraphNode) => void
   onNodeHover: (nodeId: string | null) => void
   onBackgroundClick?: () => void
@@ -42,6 +47,10 @@ interface SigmaGraphInnerProps {
   activeId: string | null
   neighborIds: Set<string> | null
   fitToken?: number
+  layout?: 'force' | 'constellation'
+  maxNodes?: number
+  showLabels?: boolean
+  linkTypesVisible?: Set<string>
 }
 
 function SigmaGraphInner({
@@ -56,6 +65,10 @@ function SigmaGraphInner({
   activeId,
   neighborIds,
   fitToken = 0,
+  layout = 'force',
+  maxNodes,
+  showLabels = true,
+  linkTypesVisible,
 }: SigmaGraphInnerProps) {
   const loadGraph = useLoadGraph()
   const sigma = useSigma()
@@ -72,37 +85,19 @@ function SigmaGraphInner({
     // Add nodes with attributes — initial positions required by Sigma
     for (let i = 0; i < nodes.length; i += 1) {
       const node = nodes[i]
-      const baseColor = NODE_COLORS[node.type] || '#999'
-      const isDimmed = searchMatchIds && !searchMatchIds.has(node.id)
-      const isNeighbor = !activeId || neighborIds?.has(node.id)
-      const isFocused = node.id === focusId
-      const isHovered = node.id === hoverId
-
-      let color = baseColor
-      let size = Math.max(4, Math.sqrt(node.val ?? 4) * 2.4)
-
-      if (isDimmed) {
-        color = DIMMED_NODE_COLORS[node.type] || 'rgba(100, 116, 139, 0.5)'
-        size = size * 0.6
-      } else if (!isNeighbor && activeId) {
-        color = UNFOCUSED_NODE_COLORS[node.type] || 'rgba(100, 116, 139, 0.35)'
-        size = size * 0.7
-      }
-
-      if (isFocused || isHovered) {
-        size = size * 1.3
-      }
+      const baseColor = nodeBaseColor(node)
+      const size = graphNodeSize(node.val)
 
       graph.addNode(node.id, {
         label: node.label,
         x: Math.cos(i * 2.399963229728653) * Math.sqrt(i + 1) * 5,
         y: Math.sin(i * 2.399963229728653) * Math.sqrt(i + 1) * 5,
         size,
-        color,
+        color: baseColor,
         wikiType: node.type,
         _wikiNode: node,
-        _focused: isFocused,
-        _hovered: isHovered,
+        _focused: false,
+        _hovered: false,
       })
     }
 
@@ -117,38 +112,40 @@ function SigmaGraphInner({
 
       const s = link.source
       const t = link.target
-      const isActive = focusId === s || focusId === t || hoverId === s || hoverId === t
-      const isDimmed = activeId && !isActive
+      const linkType = link.type?.toLowerCase()
 
       graph.addEdge(s, t, {
-        size: isActive ? 2 : 1,
-        color: isActive ? EDGE_ACTIVE_COLOR : isDimmed ? EDGE_DIMMED_COLOR : EDGE_COLOR,
+        size: 1,
+        color: edgeBaseColor(linkType),
+        _linkType: linkType,
       })
     }
 
     loadGraph(graph)
 
-    // Run ForceAtlas2 with inferred settings tuned for wiki graphs
-    const sensible = forceAtlas2.inferSettings(graph)
-    forceAtlas2.assign(graph, {
-      iterations: 300,
-      settings: {
-        ...sensible,
-        gravity: 0.04,
-        scalingRatio: 14,
-        strongGravityMode: true,
-        slowDown: 2,
-        barnesHutOptimize: true,
-        barnesHutTheta: 0.5,
-        edgeWeightInfluence: 0.5,
-        linLogMode: true,
-        outboundAttractionDistribution: true,
-      },
-    })
+    // ponytail: constellation = fixed spiral (fast); force = ForceAtlas2 (slow, denser)
+    if (layout === 'force') {
+      const sensible = forceAtlas2.inferSettings(graph)
+      forceAtlas2.assign(graph, {
+        iterations: graph.order > 60 ? 120 : 300,
+        settings: {
+          ...sensible,
+          gravity: 0.04,
+          scalingRatio: 14,
+          strongGravityMode: true,
+          slowDown: 2,
+          barnesHutOptimize: true,
+          barnesHutTheta: 0.5,
+          edgeWeightInfluence: 0.5,
+          linLogMode: true,
+          outboundAttractionDistribution: true,
+        },
+      })
+    }
 
     sigma?.refresh()
     setLayoutDone(true)
-  }, [nodes, links, loadGraph, sigma])
+  }, [nodes, links, loadGraph, sigma, layout])
 
   // Fit graph to canvas after layout so nodes use the viewport (ponytail: camera reset, not bigger container)
   useEffect(() => {
@@ -163,28 +160,29 @@ function SigmaGraphInner({
     if (!graph) return
 
     graph.forEachNode((nodeId, attrs) => {
-      const node = attrs._wikiNode as WikiGraphNode
+      const node = attrs._wikiNode as DisplayNode
       if (!node) return
 
-      const baseColor = NODE_COLORS[node.type] || '#999'
+      const baseColor = nodeBaseColor(node)
       const isDimmed = searchMatchIds && !searchMatchIds.has(nodeId)
       const isNeighbor = !activeId || neighborIds?.has(nodeId)
       const isFocused = nodeId === focusId
       const isHovered = nodeId === hoverId
 
       let color = baseColor
-      let size = Math.max(4, Math.sqrt(node.val ?? 4) * 2.4)
+      let size = graphNodeSize(node.val)
 
       if (isDimmed) {
-        color = DIMMED_NODE_COLORS[node.type] || 'rgba(100, 116, 139, 0.5)'
+        color = fadeColor(baseColor, 0.35)
         size = size * 0.6
       } else if (!isNeighbor && activeId) {
-        color = UNFOCUSED_NODE_COLORS[node.type] || 'rgba(100, 116, 139, 0.35)'
+        color = fadeColor(baseColor, 0.25)
         size = size * 0.7
       }
 
       if (isFocused || isHovered) {
-        size = size * 1.3
+        size = size * 1.35
+        color = baseColor
       }
 
       graph.setNodeAttribute(nodeId, 'color', color)
@@ -193,16 +191,17 @@ function SigmaGraphInner({
       graph.setNodeAttribute(nodeId, '_hovered', isHovered)
     })
 
-    graph.forEachEdge((edgeId, _attrs, source, target) => {
+    graph.forEachEdge((edgeId, attrs, source, target) => {
       const isActive = focusId === source || focusId === target || hoverId === source || hoverId === target
       const isDimmed = activeId && !isActive
+      const base = edgeBaseColor(attrs._linkType as string | undefined)
 
-      graph.setEdgeAttribute(edgeId, 'size', isActive ? 2 : 1)
+      graph.setEdgeAttribute(edgeId, 'size', isActive ? 2.5 : 1)
       graph.setEdgeAttribute(edgeId, 'color', isActive
-        ? EDGE_ACTIVE_COLOR
+        ? edgeActiveColor(attrs._linkType as string | undefined)
         : isDimmed
-          ? EDGE_DIMMED_COLOR
-          : EDGE_COLOR
+          ? GRAPH_SURFACE.edgeDimmed
+          : base
       )
     })
 
@@ -242,15 +241,16 @@ function SigmaGraphInner({
   useEffect(() => {
     setSettings({
       labelRenderedSizeThreshold: 8,
-      labelDensity: 0.5,
-      labelGridCellSize: 60,
-      renderLabels: true,
+      labelDensity: 0.4,
+      labelGridCellSize: 80,
+      renderLabels: showLabels,
       renderEdgeLabels: false,
-      hideEdgesOnMove: false,
+      hideEdgesOnMove: true,
       hideLabelsOnMove: true,
       zIndex: true,
       defaultNodeType: 'circle',
       defaultEdgeType: 'line',
+      labelColor: { color: GRAPH_SURFACE.label },
       nodeReducer: (nodeId, data) => {
         const res = { ...data }
         if (data._focused || data._hovered) {
@@ -260,7 +260,7 @@ function SigmaGraphInner({
         return res
       },
     })
-  }, [setSettings])
+  }, [setSettings, showLabels])
 
   return null
 }
@@ -268,21 +268,23 @@ function SigmaGraphInner({
 interface SigmaGraphClientProps extends SigmaGraphInnerProps {}
 
 export function SigmaGraphClient(props: SigmaGraphClientProps) {
+  const { showLabels = true } = props
   return (
     <SigmaContainer
-      style={{ width: '100%', height: '100%' }}
+      style={{ width: '100%', height: '100%', background: GRAPH_SURFACE.canvas }}
       settings={{
-        defaultNodeColor: '#64748b',
-        defaultEdgeColor: EDGE_COLOR,
+        defaultNodeColor: GRAPH_SURFACE.label,
+        defaultEdgeColor: GRAPH_SURFACE.edge,
         labelFont: 'system-ui, -apple-system, sans-serif',
-        labelSize: 11,
-        labelColor: { color: '#334155' },
+        labelSize: 12,
+        labelColor: { color: GRAPH_SURFACE.label },
         zIndex: true,
-        labelDensity: 0.5,
-        labelGridCellSize: 60,
+        labelDensity: 0.4,
+        labelGridCellSize: 80,
         labelRenderedSizeThreshold: 8,
-        renderLabels: true,
+        renderLabels: showLabels,
         hideLabelsOnMove: true,
+        hideEdgesOnMove: true,
       }}
     >
       <SigmaGraphInner {...props} />

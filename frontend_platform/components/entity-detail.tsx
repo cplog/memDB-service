@@ -170,7 +170,7 @@ export function EntityDetail({
 
       throw new Error('Entity not found')
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not load entity')
+      setError(e instanceof Error ? e.message : 'Failed to load entity')
       setDetail(null)
       setFacts([])
     } finally {

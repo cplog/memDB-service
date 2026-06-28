@@ -22,6 +22,11 @@ interface MentalModelItem {
   trigger?: { refresh_after_consolidation?: boolean } | null
 }
 
+interface HistoryEntry {
+  previous_content?: string | null
+  changed_at: string
+}
+
 interface MentalModelsPanelProps {
   bankId: string
 }
@@ -44,6 +49,11 @@ export function MentalModelsPanel({ bankId }: MentalModelsPanelProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [showCreate, setShowCreate] = useState(false)
 
+  const [detail, setDetail] = useState<'metadata' | 'content' | 'full'>('content')
+  const [historyData, setHistoryData] = useState<HistoryEntry[]>([])
+  const [historyLoading, setHistoryLoading] = useState(false)
+  const [historyOpenId, setHistoryOpenId] = useState<string | null>(null)
+
   const [name, setName] = useState('')
   const [modelId, setModelId] = useState('')
   const [sourceQuery, setSourceQuery] = useState('')
@@ -54,7 +64,7 @@ export function MentalModelsPanel({ bankId }: MentalModelsPanelProps) {
     setLoading(true)
     try {
       const res = await fetch(
-        `/api/mental-models?bankId=${encodeURIComponent(bankId)}&detail=content`
+        `/api/mental-models?bankId=${encodeURIComponent(bankId)}&detail=${detail}`
       )
       const data = await res.json()
       setItems(data.items ?? [])
@@ -64,7 +74,7 @@ export function MentalModelsPanel({ bankId }: MentalModelsPanelProps) {
     } finally {
       setLoading(false)
     }
-  }, [bankId])
+  }, [bankId, detail])
 
   useEffect(() => {
     load()
@@ -106,6 +116,26 @@ export function MentalModelsPanel({ bankId }: MentalModelsPanelProps) {
       setMessage('Create failed')
     } finally {
       setBusyId(null)
+    }
+  }
+
+  async function loadHistory(id: string) {
+    if (historyOpenId === id) {
+      setHistoryOpenId(null)
+      return
+    }
+    setHistoryLoading(true)
+    setHistoryOpenId(id)
+    try {
+      const res = await fetch(
+        `/api/mental-models/${id}/history?bankId=${encodeURIComponent(bankId)}`
+      )
+      const data = await res.json()
+      setHistoryData(Array.isArray(data) ? data : data?.items ?? [])
+    } catch {
+      setHistoryData([])
+    } finally {
+      setHistoryLoading(false)
     }
   }
 
@@ -161,6 +191,15 @@ export function MentalModelsPanel({ bankId }: MentalModelsPanelProps) {
         >
           {showCreate ? 'Cancel' : 'New playbook'}
         </Button>
+        <select
+          value={detail}
+          onChange={(e) => setDetail(e.target.value as 'metadata' | 'content' | 'full')}
+          className="h-9 text-xs rounded-md border border-border bg-[hsl(var(--canvas))] px-2 focus:outline-none focus:ring-1 focus:ring-[hsl(var(--vault-active))]"
+        >
+          <option value="metadata">Metadata</option>
+          <option value="content">Content</option>
+          <option value="full">Full</option>
+        </select>
       </div>
       <div className="p-5 space-y-4">
         {showCreate ? (
@@ -272,7 +311,7 @@ export function MentalModelsPanel({ bankId }: MentalModelsPanelProps) {
                       </div>
                     ) : (
                       <p className="text-xs text-[hsl(var(--vault-muted))] italic">
-                        Content generating… refresh in a minute if empty.
+                        Content generating… refresh in a minute if blank.
                       </p>
                     )}
                     {m.tags?.length ? (
@@ -306,6 +345,15 @@ export function MentalModelsPanel({ bankId }: MentalModelsPanelProps) {
                       <Button
                         size="sm"
                         variant="outline"
+                        className="text-xs min-h-[44px]"
+                        disabled={historyLoading && historyOpenId !== m.id}
+                        onClick={() => loadHistory(m.id)}
+                      >
+                        {historyOpenId === m.id ? 'Hide history' : 'History'}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
                         className="text-xs min-h-[44px] text-[hsl(var(--error-fg))]"
                         disabled={busyId === m.id}
                         onClick={() => runAction(m.id, 'delete')}
@@ -313,6 +361,36 @@ export function MentalModelsPanel({ bankId }: MentalModelsPanelProps) {
                         Delete
                       </Button>
                     </div>
+                    {historyOpenId === m.id ? (
+                      <div className="mt-2 pt-2 border-t border-border">
+                        <p className="text-[11px] font-semibold uppercase tracking-wider text-[hsl(var(--vault-muted))] mb-2">
+                          Revision history
+                        </p>
+                        {historyLoading ? (
+                          <Spinner className="size-4" />
+                        ) : historyData.length === 0 ? (
+                          <p className="text-xs text-[hsl(var(--vault-muted))] italic">No history</p>
+                        ) : (
+                          <ul className="space-y-2 max-h-40 overflow-y-auto">
+                            {historyData.map((entry, i) => (
+                              <li key={i} className="text-xs">
+                                <p className="text-[hsl(var(--vault-muted))]">
+                                  {new Date(entry.changed_at).toLocaleString()}
+                                </p>
+                                {entry.previous_content ? (
+                                  <div className="mt-1 rounded border border-border bg-[hsl(var(--card))] p-2 text-[11px] leading-relaxed line-clamp-3">
+                                    {entry.previous_content.slice(0, 300)}
+                                    {entry.previous_content.length > 300 ? '…' : ''}
+                                  </div>
+                                ) : (
+                                  <p className="italic text-[hsl(var(--vault-muted))]">First version</p>
+                                )}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    ) : null}
                   </div>
                 ) : null}
               </li>

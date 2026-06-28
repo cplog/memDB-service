@@ -25,13 +25,13 @@ export function StatsPanel({ bankId }: StatsPanelProps) {
       })
       const data = await res.json()
       if (!res.ok) {
-        setError(String(data.error ?? `Could not load stats (${res.status})`))
+        setError(String(data.error ?? `Failed to load stats (${res.status})`))
         setStats(null)
         return
       }
       setStats(data)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not load stats')
+      setError(e instanceof Error ? e.message : 'Failed to load stats')
       setStats(null)
     } finally {
       setLoading(false)

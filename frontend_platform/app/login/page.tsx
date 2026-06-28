@@ -59,7 +59,7 @@ export default function LoginPage() {
         setError(data.error || 'Login failed')
       }
     } catch {
-      setError('Network error')
+      setError('Connection error. Check your network and try again.')
     } finally {
       setLoading(false)
     }

@@ -77,7 +77,7 @@ Demo accounts (hardcoded in `shared/lib/auth.ts`):
 │   ├── next.config.js         # API proxy rewrites to backend
 │   ├── tailwind.config.ts
 │   └── package.json
-├── shared/lib/                # Shared TypeScript modules (12 files)
+├── shared/lib/                # Shared TypeScript modules (13 files)
 │   ├── auth.ts                # JWT session, demo users, role guards
 │   ├── teams.ts               # Static org config, bank ID generation
 │   ├── memory-scope.ts        # RBAC scope resolution (bankId + tags + tagsMatch)
@@ -90,13 +90,20 @@ Demo accounts (hardcoded in `shared/lib/auth.ts`):
 │   ├── retain-validation.ts   # Retain request validation + metadata building
 │   ├── scenario.ts            # Scenario tag normalization + presets
 │   ├── team-banks.ts          # Per-team domain tuning profiles
+│   ├── temporal-display.ts    # Date/time formatting helpers for memory event display
 │   └── selfcheck.ts           # Aggregates all module self-checks
 ├── scripts/                   # Automation scripts
 │   ├── seed-customer-demo.sh  # Seeds realistic demo data via portal APIs
 │   ├── production_e2e_reset.py # Production data reset + full E2E (Python)
 │   ├── uat-smoke.sh           # Tier-B smoke test
 │   └── sync-hindsight-docs.sh # Sync Hindsight docs from upstream repo
-├── setup/docs/guides/         # Human docs (UAT, USERFLOW, PORTAL_GUIDE, etc.)
+├── frontend_platform/hooks/   # React custom hooks
+│   └── use-scramble-text.ts  # Text scramble animation hook
+├── frontend_platform/lib/     # Frontend utilities + re-exports from shared/
+│   ├── api-guard.ts          # Frontend API route guards
+│   ├── workspace-colors.ts   # Team/workspace color theming
+│   ├── workspace-mode.ts     # Workspace layout mode helpers
+│   └── *.selfcheck.ts        # Re-exports for individual self-check commands
 ├── examples/                  # Demo content + cold start Python script
 ├── docker-compose.yml         # Postgres + Hindsight (local dev)
 ├── railway.json               # Railway deployment config

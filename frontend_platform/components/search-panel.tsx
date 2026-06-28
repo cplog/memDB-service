@@ -322,6 +322,8 @@ export function SearchPanel({
   const [playbookMessage, setPlaybookMessage] = useState('')
   const [savingPlaybook, setSavingPlaybook] = useState(false)
   const [scenarioId, setScenarioId] = useState('')
+  const [traceEnabled, setTraceEnabled] = useState(false)
+  const [traceData, setTraceData] = useState<Record<string, unknown> | null>(null)
 
   function toggleExpand(key: string) {
     setExpandedDocs((prev) => {
@@ -346,6 +348,7 @@ export function SearchPanel({
           bankId,
           query: recallQuery,
           scenarioId: scenarioId.trim() || undefined,
+          trace: traceEnabled || undefined,
         }),
       })
       const data = await res.json()
@@ -355,6 +358,7 @@ export function SearchPanel({
         return
       }
       setRecallResults(data.memories || [])
+      if (traceEnabled) setTraceData(data.trace ?? null)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Search failed')
       setRecallResults([])
@@ -437,12 +441,12 @@ export function SearchPanel({
       })
       const data = await res.json()
       if (!res.ok) {
-        setPlaybookMessage(String(data.error ?? 'Save failed'))
+        setPlaybookMessage(String(data.error ?? 'Failed to save'))
         return
       }
       setPlaybookMessage('Saved as playbook — generates in Config → Playbooks')
     } catch {
-      setPlaybookMessage('Save failed')
+      setPlaybookMessage('Failed to save')
     } finally {
       setSavingPlaybook(false)
     }
@@ -470,6 +474,16 @@ export function SearchPanel({
           </p>
 
           <ScenarioField bankId={bankId} value={scenarioId} onChange={setScenarioId} />
+
+          <label className="flex items-center gap-1.5 text-xs text-[hsl(var(--vault-muted))] cursor-pointer mt-2">
+            <input
+              type="checkbox"
+              checked={traceEnabled}
+              onChange={(e) => { setTraceEnabled(e.target.checked); if (!e.target.checked) setTraceData(null) }}
+              className="accent-[hsl(var(--vault-active))]"
+            />
+            Show recall trace
+          </label>
 
           <TabsContent value="recall" className="mt-4 space-y-3">
             <div className="flex gap-2">

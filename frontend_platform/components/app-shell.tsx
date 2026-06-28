@@ -8,7 +8,6 @@ import { KnowledgeGraph } from './knowledge-graph'
 import { MemoryEditor } from './memory-editor'
 import { SearchPanel } from './search-panel'
 import { StatsPanel } from './stats-panel'
-import { TimelinePanel } from './timeline-panel'
 import { AdminSettings } from './admin-settings'
 import { ExportImport } from './export-import'
 import { DocumentsPanel } from './documents-panel'
@@ -42,7 +41,6 @@ interface AppShellProps {
 type ViewType =
   | 'sources'
   | 'knowledge'
-  | 'timeline'
   | 'editor'
   | 'graph'
   | 'search'
@@ -54,7 +52,6 @@ type ViewType =
 const WORK_VIEWS: { id: ViewType; label: string }[] = [
   { id: 'sources', label: 'Sources' },
   { id: 'knowledge', label: 'Knowledge' },
-  { id: 'timeline', label: 'Timeline' },
   { id: 'editor', label: 'Add note' },
   { id: 'search', label: 'Query' },
   { id: 'graph', label: 'Graph' },
@@ -465,7 +462,7 @@ export function AppShell({ user, teams }: AppShellProps) {
                 <button
                   type="button"
                   onClick={() => setSelectedDocumentId(null)}
-                  className="text-[hsl(var(--vault-muted))] hover:text-foreground transition-colors shrink-0"
+                  className="text-[hsl(var(--vault-muted))] hover:text-foreground shrink-0"
                   aria-label="Back to tab list"
                 >
                   <svg viewBox="0 0 16 16" className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
@@ -486,7 +483,7 @@ export function AppShell({ user, teams }: AppShellProps) {
                     aria-selected={activeView === view.id}
                     onClick={() => goToView(view.id)}
                     className={cn(
-                      'px-2.5 py-1.5 text-xs font-medium border-b-2 transition-colors whitespace-nowrap min-h-[36px]',
+                      'px-2.5 py-1.5 text-xs font-medium border-b-2 whitespace-nowrap min-h-[36px]',
                       activeView === view.id
                         ? 'border-[hsl(var(--mode-scope))] text-foreground'
                         : 'border-transparent text-[hsl(var(--vault-muted))] hover:text-foreground/80'
@@ -510,7 +507,7 @@ export function AppShell({ user, teams }: AppShellProps) {
                         aria-selected={activeView === view.id}
                         onClick={() => goToView(view.id)}
                         className={cn(
-                          'px-2.5 py-1.5 text-xs font-medium border-b-2 transition-colors whitespace-nowrap min-h-[36px]',
+                          'px-2.5 py-1.5 text-xs font-medium border-b-2 whitespace-nowrap min-h-[36px]',
                           activeView === view.id
                             ? 'border-[hsl(var(--mode-ops))] text-foreground'
                             : 'border-transparent text-[hsl(var(--vault-muted))] hover:text-[hsl(var(--mode-ops))]/80'
@@ -557,13 +554,6 @@ export function AppShell({ user, teams }: AppShellProps) {
               onAddNote={handleAddNote}
               onUpload={openSourcesUpload}
               onAddToDocument={addToDocument}
-            />
-          )}
-          {activeView === 'timeline' && (
-            <TimelinePanel
-              bankId={activeBank}
-              onSelectEntity={openEntity}
-              onOpenDocument={(docId) => openDocument(activeBank, docId)}
             />
           )}
           {activeView === 'editor' && (

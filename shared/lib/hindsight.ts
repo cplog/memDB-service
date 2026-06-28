@@ -266,6 +266,10 @@ export async function clearMentalModelForBank(bankId: string, mentalModelId: str
   return getHindsightClient().clearMentalModel(bankId, mentalModelId)
 }
 
+export async function getMentalModelHistoryForBank(bankId: string, mentalModelId: string) {
+  return getHindsightClient().getMentalModelHistory(bankId, mentalModelId)
+}
+
 export async function updateMentalModelForBank(
   bankId: string,
   mentalModelId: string,
@@ -403,6 +407,51 @@ export async function listDocumentsForBank(
       tags: options?.tags,
       tags_match: options?.tagsMatch,
     },
+  })
+  if (error) throw new Error(String(error))
+  return data
+}
+
+export async function getEntityGraphData(
+  bankId: string,
+  options?: { limit?: number; minCount?: number }
+) {
+  const { data, error } = await sdk.getEntityGraph({
+    client: getSdk(),
+    path: { bank_id: bankId },
+    query: { limit: options?.limit ?? 200, min_count: options?.minCount },
+  })
+  if (error) throw new Error(String(error))
+  return data
+}
+
+export async function listTagsForBank(
+  bankId: string,
+  options?: {
+    q?: string
+    source?: 'memories' | 'mental_models'
+    limit?: number
+    offset?: number
+  }
+) {
+  const { data, error } = await sdk.listTags({
+    client: getSdk(),
+    path: { bank_id: bankId },
+    query: {
+      q: options?.q,
+      source: options?.source,
+      limit: options?.limit,
+      offset: options?.offset,
+    },
+  })
+  if (error) throw new Error(String(error))
+  return data
+}
+
+export async function listObservationScopesForBank(bankId: string) {
+  const { data, error } = await sdk.listObservationScopes({
+    client: getSdk(),
+    path: { bank_id: bankId },
   })
   if (error) throw new Error(String(error))
   return data
